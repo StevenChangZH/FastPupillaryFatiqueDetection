@@ -8,19 +8,21 @@
 class ThreadController
 {
 public:
-	ThreadController(unsigned int id);
+	ThreadController(unsigned int id, cv::CascadeClassifier cas);
 	~ThreadController(void);
 
 	// Start method, used to call detach method
 	void start();
+	// Get thread id
+	unsigned int getId();
 
 	// If the thread has any job, modify this to control actions
 	bool hasJob;
 	// Terminated semaphore
 	bool isTerminated;
 
-	// id
-	unsigned int id;
+	// Global cascade
+	cv::CascadeClassifier cascade;
 	// The copy-and-write image
 	IplImage* img;
 
@@ -30,13 +32,18 @@ protected:
 
 	// THE thread
 	std::thread m_thread;
+	// id
+	const unsigned int id;
 
 private:
 	ThreadController();
 
-	// Some params to monitor thread to protect thread safety
-	// This bool is used to show if the thread::detach has returned
-	bool isReallyTerminated;
+	// Detect method, used in ThreadController::runLoopControl
+	void detectPupil();
+
+	//// Some params to monitor thread to protect thread safety
+	//// This bool is used to show if the thread::detach has returned
+	//bool isReallyTerminated;
 };
 
 #endif

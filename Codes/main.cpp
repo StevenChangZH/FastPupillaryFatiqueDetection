@@ -1,16 +1,16 @@
 #include "stdafx.h"
+#include "SingletonGrabber.h"
 #include "ThreadPool.h"
 
 // Notice: only use using in this file
 using namespace std;
 using namespace cv;
- 
-void DetectAndDraw(IplImage* img);
 
-int main(int argc, char** argv[])
+int main(int argc, char* argv[])
 {
-	ThreadPool* pool = ThreadPool::getInstance();
+	SingletonGrabber<ThreadPool> grabber;
+	ThreadPool* pool = grabber.getInstance();
 	pool->start();
 	pool->runLoop();
-    return 0;
+	return 0;
 }

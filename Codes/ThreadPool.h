@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ThreadController.h"
+#include "SingletonGrabber.h"
 #pragma once
 
 #ifndef _THREAD_POOL_
@@ -8,8 +9,9 @@
 class ThreadPool
 {
 public:
-	// Use this to get instance instead of default constructors
-	static ThreadPool* getInstance();
+	// Set friend
+	template<class T>
+	friend class SingletonGrabber;
 
 	// Start method, used to call detach method to get into the loop
 	void start();
@@ -24,10 +26,7 @@ private:
 	explicit ThreadPool(void);
 	ThreadPool(const ThreadPool*);
 	ThreadPool* operator=(const ThreadPool*);
-	~ThreadPool(void);
-
-	// The singleton
-	static ThreadPool* instance;
+	~ThreadPool();
 
 protected:
 	// Some assistance methods
@@ -36,7 +35,6 @@ protected:
 
 	// OpenCV variables
 	cv::CascadeClassifier	m_cascade;// Cascade classifier
-	CvMemStorage*			m_memStorage;// Memory storage
 	IplImage*				m_image;// Image of every frame
 
 	// Thread controller vector

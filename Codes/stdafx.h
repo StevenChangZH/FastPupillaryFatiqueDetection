@@ -15,3 +15,6 @@
 
 // Windows headers
 #include <windows.h>
+
+// Memory leak analysis - Visual Leak Detector
+//#include <vld.h>
