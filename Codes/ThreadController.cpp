@@ -1,10 +1,12 @@
 #include "ThreadController.h"
 
 
-ThreadController::ThreadController(unsigned int id, cv::CascadeClassifier cas):
-	isTerminated(false), hasJob(false), id(id),
-	cascade(cas)
+ThreadController::ThreadController(unsigned int id, const std::string &cascadeName):
+	isTerminated(false), hasJob(false), id(id)
 {
+	// Load the file to construct a cascade
+	cv_cascade.load( cascadeName );
+
 	// Register the thread
 	this->m_thread = std::thread( [this] { 
 		this->runLoopControl(); } );
@@ -33,10 +35,9 @@ void ThreadController::runLoopControl()
 		// Use hasJob to check if needed to do a job
 		if ( hasJob ) {
 			// Do something
-			std::cout << "DO SOMETHING!! Thread: " << this->getId() << std::endl;
-			//cvShowImage( "result", img );
 			this->detectPupil();
 
+			// Set the semaphore back
 			hasJob = false;
 		}
 
@@ -47,15 +48,15 @@ void ThreadController::runLoopControl()
 
 void ThreadController::detectPupil()
 {
-	int i = 0;
-	double t = 0;
-	std::vector<cv::Rect> faces;
-	IplImage* gray = cvCreateImage(cvGetSize(img),8,1);
-	cvCvtColor( img, gray, CV_BGR2GRAY );
-	cvEqualizeHist( gray, gray );
-	/*
-	t = (double)cvGetTickCount();
-	cascade.detectMultiScale( gray , faces,
+	// Get the gray image and perform hist equalization
+	std::vector<cv::Rect> eyes;
+	cv::Mat frame_gray = cv::Mat( frame_img );
+	cvtColor( frame_gray, frame_gray, CV_BGR2GRAY );
+	equalizeHist( frame_gray, frame_gray );
+	
+	// Detect eyes && get time
+	double t = (double)cvGetTickCount();
+	cv_cascade.detectMultiScale( frame_gray , eyes,
 		1.1, 2, 0
 		//|CV_HAAR_FIND_BIGGEST_OBJECT
 		//|CV_HAAR_DO_ROUGH_SEARCH
@@ -64,9 +65,13 @@ void ThreadController::detectPupil()
 		cv::Size(30, 30) );
 	t = (double)cvGetTickCount() - t;
 	double t0=t/((double)cvGetTickFrequency()*1000.);
-	printf( "detection time = %g ms, FPS=%g\n", t0, 1000/t0);
-
-	for( std::vector<cv::Rect>::const_iterator r = faces.begin(); r != faces.end(); r++, i++ )
+	// Output
+	std::cout << "Thread: " << this->getId() <<
+		". Detection time = " << t0 << " ms, avg thread FPS= " <<
+		1000/t0 << ". Eyes: " << eyes.size() << std::endl;
+	
+	// Calculate the pos
+	for( std::vector<cv::Rect>::const_iterator r = eyes.begin(); r != eyes.end(); r++ )
 	{
 		cv::Point center;
 		cv::Scalar color = CV_RGB(0,128,255);
@@ -76,13 +81,12 @@ void ThreadController::detectPupil()
 		center.y = cvRound(r->y + r->height*0.5);
 		//radius = (int)(cvRound(r->width + r->height)*0.25);
 		radius = 2;
-		cvCircle( img, center, radius, color, 3, 8, 0 );
-		//cvShowImage( "result", img );
-	}*/
+		circle( frame_img, center, radius, color, 3, 8, 0 );
+	}
 	
-	// Show background img
-	cvShowImage( "result", img );
+	// Show img
+	imshow( "result", frame_img );
 	// Free the memory
-	cvReleaseImage( &gray );
-	cvReleaseImage( &img );
+	frame_gray.release();
+	frame_img.release();
 }

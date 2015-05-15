@@ -1,14 +1,15 @@
 #include "stdafx.h"
+#include "UnInheritable.h"
 #pragma once
 
 #ifndef _THREAD_CONTROLLER_
 #define _THREAD_CONTROLLER_
 
-// The controller controls a thread
-class ThreadController
+// The controller controls a thread: Cannot be inherited.
+class ThreadController : public virtual Uninheritable<ThreadController>
 {
 public:
-	ThreadController(unsigned int id, cv::CascadeClassifier cas);
+	ThreadController(unsigned int id, const std::string &cascadeName);
 	~ThreadController(void);
 
 	// Start method, used to call detach method
@@ -21,10 +22,8 @@ public:
 	// Terminated semaphore
 	bool isTerminated;
 
-	// Global cascade
-	cv::CascadeClassifier cascade;
 	// The copy-and-write image
-	IplImage* img;
+	cv::Mat frame_img;
 
 protected:
 	// Run loop method, use this method to register actions after thread detached
@@ -34,16 +33,14 @@ protected:
 	std::thread m_thread;
 	// id
 	const unsigned int id;
+	// cascade
+	cv::CascadeClassifier cv_cascade;
 
 private:
 	ThreadController();
 
 	// Detect method, used in ThreadController::runLoopControl
 	void detectPupil();
-
-	//// Some params to monitor thread to protect thread safety
-	//// This bool is used to show if the thread::detach has returned
-	//bool isReallyTerminated;
 };
 
 #endif

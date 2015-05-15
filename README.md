@@ -2,7 +2,7 @@
 Real-time pupil detection using OpenCV &amp; C++.
 
 ## What is it?
-We use it to detect the tiredness of human.
+We use it to detect your eyes. After some analysis can get the quantifiable value of your body tiredness.
 
 ## Build and Language
 How to use it: create a project in your vs, add OpenCV environment and add codes.
@@ -20,4 +20,7 @@ However, please notice:
 * `stdafx.h`: include all headers.
 * `ThreadController.h/cpp`: controls a thread and its method. Modify your actions within ThreadController::runLoopControl() method.
 * `ThreadPool.h/cpp`: a thread pool. Also it is a singleton - but not use it directly. Use SingletonGrabber to access the instance.
+
 * `SingletonGrabber.h`: encapsulate a static singleton instance to realize singleton design pattern.
+* `UnInheritable.h`: encapsulate a virtual base class to keep ThreadPool and ThreadController cannot be inherited.
+* `haarcascade_eye_tree_eyeglasses.xml`: classifier you can find from OpenCV.

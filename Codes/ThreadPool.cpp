@@ -31,16 +31,15 @@ void ThreadPool::runLoop()
 			// not a nullptr, do something
 			// Capture image
 			m_image = cvQueryFrame( imageCapture );
-			if ( !m_image ) break;
+			//if ( !m_image ) break;
 
-			// Set the semaphore
+			// Set the semaphore to trigger the event
 			pController->hasJob = true;
 			// Copy the frame
-			pController->img = cvCloneImage( m_image );
+			pController->frame_img = m_image( cv::Rect( 120, 100, 400, 200) );
 		}
 		++q;
 		pressedKey = cvWaitKey( 30 );
-		//if(q==100) pressedKey='q';
 	}
 
 	// Terminate all
@@ -56,16 +55,12 @@ void ThreadPool::runLoop()
 ThreadPool::ThreadPool(void):
 	cascadeName("haarcascade_eye_tree_eyeglasses.xml")
 {
-	// Load the file to construct a cascade
-	m_cascade.load( cascadeName );
-    // Always check 
-    assert( &m_cascade );
 	// Initialize the m_image
 	m_image = cvCreateImage( cv::Size( 640, 480 ), 8, 1 );
 
 	// 4 threads as default
 	for ( unsigned int i=0; i<MAX_THREAD_NUM; ++i ) {
-		ThreadController* pController = new ThreadController( i, m_cascade );
+		ThreadController* pController = new ThreadController( i, cascadeName );
 		this->m_controllerVec.push_back( pController );
 	}
 }

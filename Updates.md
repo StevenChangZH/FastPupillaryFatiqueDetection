@@ -10,3 +10,7 @@ Update record file
 * Now it can display something from your camera
 * Use advanced singleton design pattern.
 * No memory leaks now - using Visual Leak Detector 2.4RC.
+
+**Version 1.2**
+* It can detect your eyes now without any crash.
+* Use a trick to keep ThreadPool and ThreadController cannot be inherited.
