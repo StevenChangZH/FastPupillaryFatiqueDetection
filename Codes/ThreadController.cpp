@@ -16,12 +16,6 @@ ThreadController::~ThreadController(void)
 {
 }
 
-void ThreadController::start()
-{
-	// Detach!
-	this->m_thread.detach();
-}
-
 unsigned int ThreadController::getId()
 {
 	return this->id;
@@ -44,6 +38,18 @@ void ThreadController::runLoopControl()
 		// Use this to wait for 200 ms
 		Sleep( 33 );
 	}
+}
+
+ThreadController::ThreadController():id(0)
+{
+	// Default params
+	ThreadController( 0, std::string( "haarcascade_eye_tree_eyeglasses.xml" ) );
+}
+
+void ThreadController::start()
+{
+	// Detach!
+	this->m_thread.detach();
 }
 
 void ThreadController::detectPupil()

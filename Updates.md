@@ -14,3 +14,7 @@ Update record file
 **Version 1.2**
 * It can detect your eyes now without any crash.
 * Use a trick to keep ThreadPool and ThreadController cannot be inherited.
+
+**Version 1.3**
+* No functionality added but adjust the structure.
+* Allow ThreadController can be inherited.

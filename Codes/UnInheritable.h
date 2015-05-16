@@ -4,11 +4,8 @@
 #ifndef _UNINHERITABLE_
 #define _UNINHERITABLE_
 
-class ThreadPool;
-class ThreadController;
-
 template<typename T>
-// Used to assure class cannot be inherited 
+// A mixin class, used to assure class cannot be inherited 
 class Uninheritable
 {
 	// Set friend
