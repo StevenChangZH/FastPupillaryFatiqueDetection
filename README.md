@@ -1,8 +1,10 @@
-# PupilDetection
-Real-time pupil detection using OpenCV &amp; C++. This is our Computer Vision course project. **NOTICE: project uncompleted**
+# Fast Pupillary Fatique Detection
+Real-time pupillary fatique detection using OpenCV &amp; C++. This is our Computer Vision course project. **NOTICE: project uncompleted**
 
 ## What is it?
-We use it to detect your pupillary diameter waves. Spontaneous waves of pupillary size and tiredness of human body are correlated. (*LOWENSTEIN O,FEINBERG R,LOEWENFELD I E. Pupillary movements during acute and chronic fatigue[J].Invest Ophthalmol Vis Sci,1963,2(2):138-157. *) Also referring to this paper (*Lüdtke H, Wilhelm B, Adler M, et al. Mathematical procedures in data recording and processing of pupillary fatigue waves[J]. Vision research, 1998, 38(19): 2889-2896.*) we are trying to apply the analysis of PUI( Pupillary Unrest Index) in a more effective way.
+We use it to detect your pupillary diameter waves. Spontaneous waves of pupillary size and tiredness of human body are correlated. (`LOWENSTEIN O,FEINBERG R,LOEWENFELD I E. Pupillary movements during acute and chronic fatigue[J].Invest Ophthalmol Vis Sci,1963,2(2):138-157.`  )
+
+Also referring to this paper (`Lüdtke H, Wilhelm B, Adler M, et al. Mathematical procedures in data recording and processing of pupillary fatigue waves[J]. Vision research, 1998, 38(19): 2889-2896.`) we are trying to apply the analysis of PUI( Pupillary Unrest Index) in a more effective way.
 
 ## Build and Language
 How to use it: create a project in your vs, add OpenCV environment and add codes.
