@@ -23,7 +23,7 @@ public:
 	const std::string cascadeName;
 
 private:
-	// Hide these methods to realize singleton
+	// Hide these default functions to realize singleton
 	explicit ThreadPool(void);
 	ThreadPool(const ThreadPool*);
 	ThreadPool* operator=(const ThreadPool*);

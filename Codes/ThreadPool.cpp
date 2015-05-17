@@ -74,7 +74,7 @@ ThreadPool::~ThreadPool(void)
 	m_controllerVec.clear();
 }
 
-ThreadController* ThreadPool::checkFreedom()
+ThreadController* ThreadPool::checkFreedom() 
 {
 	// returns the ptr as current threadController
 	// if all threadController having jobs, return nullptr.

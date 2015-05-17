@@ -9,9 +9,7 @@
 // Other STL headers
 #include <iostream>
 #include <thread>
-#include <cassert>
 #include <vector>
-#include <queue>
 
 // Windows headers
 #include <windows.h>

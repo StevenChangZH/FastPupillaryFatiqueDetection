@@ -11,11 +11,11 @@ class ThreadController
 	friend class ThreadPool;
 
 public:
-	ThreadController(unsigned int id, const std::string &cascadeName);
+	ThreadController(unsigned int id, const std::string& cascadeName);
 	~ThreadController(void);
 
 	// Get thread id
-	unsigned int getId();
+	unsigned int getId() const;
 
 	// If the thread has any job, modify this to control actions
 	bool hasJob;
@@ -26,7 +26,7 @@ public:
 	cv::Mat frame_img;
 
 protected:
-	// Run loop method, use this method to register actions after thread detached
+	// Run loop method, keep it running consistantly and assign jobs
 	virtual void runLoopControl();
 
 	// THE thread
@@ -37,12 +37,11 @@ protected:
 	cv::CascadeClassifier cv_cascade;
 
 private:
-	ThreadController();
 	// Those methods should only be used by ThreadPool
 	// Start method, used to call detach method
 	void start();
 
-	// Detect method, used in ThreadController::runLoopControl
+	// Pupillay detection & analysis method, used in ThreadController::runLoopControl
 	void detectPupil();
 };
 

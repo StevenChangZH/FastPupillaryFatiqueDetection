@@ -18,3 +18,6 @@ Update record file
 **Version 1.3**
 * No functionality added but adjust the structure.
 * Allow ThreadController can be inherited.
+
+**Version 1.3.1**
+* Fix a bug: delete default ctor of ThreadController

@@ -1,7 +1,7 @@
 #include "ThreadController.h"
 
 
-ThreadController::ThreadController(unsigned int id, const std::string &cascadeName):
+ThreadController::ThreadController(unsigned int id, const std::string& cascadeName):
 	isTerminated(false), hasJob(false), id(id)
 {
 	// Load the file to construct a cascade
@@ -16,7 +16,7 @@ ThreadController::~ThreadController(void)
 {
 }
 
-unsigned int ThreadController::getId()
+unsigned int ThreadController::getId() const
 {
 	return this->id;
 }
@@ -35,15 +35,9 @@ void ThreadController::runLoopControl()
 			hasJob = false;
 		}
 
-		// Use this to wait for 200 ms
+		// Use this to wait for 33 ms
 		Sleep( 33 );
 	}
-}
-
-ThreadController::ThreadController():id(0)
-{
-	// Default params
-	ThreadController( 0, std::string( "haarcascade_eye_tree_eyeglasses.xml" ) );
 }
 
 void ThreadController::start()
@@ -77,17 +71,19 @@ void ThreadController::detectPupil()
 		1000/t0 << ". Eyes: " << eyes.size() << std::endl;
 	
 	// Calculate the pos
-	for( std::vector<cv::Rect>::const_iterator r = eyes.begin(); r != eyes.end(); r++ )
+	int i = 0;// Temp loop counter
+	for( std::vector<cv::Rect>::const_iterator r = eyes.begin(); 
+		r != eyes.end() && i < 2; ++r, ++i )
 	{
 		cv::Point center;
-		cv::Scalar color = CV_RGB(0,128,255);
+		cv::Scalar color = CV_RGB( 255, 255, 255 );
 		int radius;
 		//center is the coord of pupil
-		center.x = cvRound(r->x + r->width*0.5);
-		center.y = cvRound(r->y + r->height*0.5);
+		center.x = cvRound( r->x + r->width*0.5 );
+		center.y = cvRound( r->y + r->height*0.5 );
 		//radius = (int)(cvRound(r->width + r->height)*0.25);
 		radius = 2;
-		circle( frame_img, center, radius, color, 3, 8, 0 );
+		circle( frame_img, center, r->height/2, color, 1, 8, 0 );
 	}
 	
 	// Show img
