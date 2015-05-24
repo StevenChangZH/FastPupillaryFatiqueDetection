@@ -7,7 +7,7 @@
 template <class Singleton> class SingletonGrabber final
 {
 public:
-	SingletonGrabber();
+	explicit SingletonGrabber();
 	// ONLY use this if Singleton class has no default ctor
 	// that is, singleton must be a temporary object
 	explicit SingletonGrabber(Singleton*&& singleton) throw();
