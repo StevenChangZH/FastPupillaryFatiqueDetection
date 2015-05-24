@@ -11,8 +11,8 @@ public:
 	// ONLY use this if Singleton class has no default ctor
 	// that is, singleton must be a temporary object
 	explicit SingletonGrabber(Singleton*&& singleton) throw();
-	SingletonGrabber(const SingletonGrabber& grabber) { ++m_reference; }
-	SingletonGrabber& operator = (const SingletonGrabber& singleton) {} 
+	explicit SingletonGrabber(const SingletonGrabber& grabber) { ++m_reference; }
+	explicit SingletonGrabber& operator = (const SingletonGrabber& singleton) {} 
 	virtual ~SingletonGrabber();
 	
 	// Use this to get instance instead of default constructors
