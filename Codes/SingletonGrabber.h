@@ -1,62 +1,62 @@
-#include "stdafx.h"
 #pragma once
-
 #ifndef _SINGLETON_GRABBER_
 #define _SINGLETON_GRABBER_
-template<class T>
-// Use this instead of singleton class directly
-class SingletonGrabber
+#include "includes.h"
+
+// Use this instead of Singleton class directly.
+template <class Singleton> class SingletonGrabber final
 {
 public:
-	SingletonGrabber(void);
-	~SingletonGrabber(void);
+	SingletonGrabber();
+	// ONLY use this if Singleton class has no default ctor
+	// that is, singleton must be a temporary object
+	explicit SingletonGrabber(Singleton*&& singleton) throw();
+	SingletonGrabber(const SingletonGrabber& grabber) { ++m_reference; }
+	SingletonGrabber& operator = (const SingletonGrabber& singleton) {} 
+	virtual ~SingletonGrabber();
 	
 	// Use this to get instance instead of default constructors
-	static T* getInstance();
+	static std::unique_ptr<Singleton>& getInstance() { return m_pInstance; }
 
 private:
 	// the instance
-	static T* m_pInstance;
+	static std::unique_ptr<Singleton> m_pInstance;
 	// the reference of this grabber
 	static unsigned int m_reference;
 };
 
 #endif
 
-template<class T>
-T* SingletonGrabber<T>::m_pInstance = nullptr;
-template<class T>
-unsigned int SingletonGrabber<T>::m_reference = 0;
+template <class Singleton>
+std::unique_ptr<Singleton> SingletonGrabber<Singleton>::m_pInstance = nullptr;
 
-template<class T>
-T* SingletonGrabber<T>::getInstance()
+template <class Singleton>
+unsigned int SingletonGrabber<Singleton>::m_reference = 0;
+
+template <class Singleton>
+SingletonGrabber<Singleton>::SingletonGrabber() 
 {
 	if ( m_pInstance == nullptr ) {
-		m_pInstance = new ThreadPool();
+		m_pInstance = std::unique_ptr<Singleton>();
 	}
-	
-	return m_pInstance;
-}
-
-template<class T>
-SingletonGrabber<T>::SingletonGrabber(void)
-{
-	// Create instance
-	if ( m_pInstance == nullptr ) {
-		m_pInstance = new ThreadPool();
-	}
-
 	++m_reference;
 }
 
-template<class T>
-SingletonGrabber<T>::~SingletonGrabber(void)
+template <class Singleton>
+SingletonGrabber<Singleton>::SingletonGrabber(Singleton*&& singleton) throw() 
+{
+	if ( m_pInstance == nullptr ) {
+		m_pInstance = std::unique_ptr<Singleton>( singleton );
+		singleton = nullptr;
+	}
+	++m_reference;
+}
+
+template <class Singleton>
+SingletonGrabber<Singleton>::~SingletonGrabber() 
 {
 	--m_reference;
-
 	if ( m_reference == 0 ) {
-		// release
-		delete m_pInstance;
 		m_pInstance = nullptr;
 	}
 }

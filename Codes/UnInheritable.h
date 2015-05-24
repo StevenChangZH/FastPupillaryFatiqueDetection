@@ -4,6 +4,7 @@
 #ifndef _UNINHERITABLE_
 #define _UNINHERITABLE_
 
+// Deprecated NOW
 template<typename T>
 // A mixin class, used to assure class cannot be inherited 
 class Uninheritable

@@ -1,5 +1,5 @@
-# Fast Pupillary Fatique Detection
-Real-time pupillary fatique detection using OpenCV &amp; C++. This is our Computer Vision course project. **NOTICE: project uncompleted**
+# Fast Pupillary Fatique Waves Detection
+Real-time pupillary fatique wave detection using OpenCV &amp; C++. This is our Computer Vision course project. **NOTICE: project uncompleted for now**
 
 ## What is it?
 We use it to detect your pupillary diameter waves. Spontaneous waves of pupillary size and tiredness of human body are correlated. (`LOWENSTEIN O,FEINBERG R,LOEWENFELD I E. Pupillary movements during acute and chronic fatigue[J].Invest Ophthalmol Vis Sci,1963,2(2):138-157.`  )
@@ -19,10 +19,9 @@ However, please notice:
 ## Files
 
 * `main.cpp`: program entrance.
-* `stdafx.h`: include all headers.
+* `includes.h`: include all headers.
 * `ThreadController.h/cpp`: controls a thread and its method. Modify your actions within ThreadController::runLoopControl() method.
 * `ThreadPool.h/cpp`: a thread pool. Also it is a singleton - but not use it directly. Use SingletonGrabber to access the instance.
 
 * `SingletonGrabber.h`: encapsulate a static singleton instance to realize singleton design pattern.
-* `UnInheritable.h`: encapsulate a virtual base class to keep ThreadPool cannot be inherited.
 * `haarcascade_eye_tree_eyeglasses.xml`: classifier you can find from OpenCV.

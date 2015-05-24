@@ -21,3 +21,7 @@ Update record file
 
 **Version 1.3.1**
 * Fix a bug: delete default ctor of ThreadController
+
+**Version 1.3.2**
+* `Uninheritable.h` deprecated. Use final instead.
+* Reconstruct the SingletonGrabber
