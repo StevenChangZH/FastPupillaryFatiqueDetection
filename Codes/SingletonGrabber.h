@@ -8,8 +8,9 @@ template <class Singleton> class SingletonGrabber final
 {
 public:
 	explicit SingletonGrabber();
-	// ONLY use this if Singleton class has no default ctor
+	// ONLY use this for ctors with params
 	// that is, singleton must be a temporary object
+	// Like this: SingletonGrabber( new Singleton( args ) );
 	explicit SingletonGrabber(Singleton*&& singleton) throw();
 	explicit SingletonGrabber(const SingletonGrabber& grabber) { ++m_reference; }
 	SingletonGrabber& operator = (const SingletonGrabber& singleton) { return *this; }
