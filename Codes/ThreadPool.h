@@ -1,47 +1,39 @@
-#include "stdafx.h"
-#include "ThreadController.h"
-#include "SingletonGrabber.h"
-#include "UnInheritable.h"
 #pragma once
+#include "includes.h"
+#include "ThreadController.h"
 
-#ifndef _THREAD_POOL_
-#define _THREAD_POOL_
-// Thread Pool, keep it as a singleton and cannot be inherited
-class ThreadPool : virtual public Uninheritable<ThreadPool>
+// In this design, the thread pool will do one job consistantly.
+// It will start running once initialized.
+// The thread pool is an singleton.
+class ThreadPool
 {
-	// Set friend
-	template<class T>
-	friend class SingletonGrabber;
-
 public:
-	// Start method, used to call detach method to get into the loop
-	void start();
-	// Run loop method, decide each conroller's action
-	void runLoop();
+	explicit ThreadPool();
+	explicit ThreadPool(unsigned int tNum, const std::string& cName);
+	virtual ~ThreadPool();
 
-	// Cascade name
-	const std::string cascadeName;
-
-private:
-	// Hide these default functions to realize singleton
-	explicit ThreadPool(void);
-	ThreadPool(const ThreadPool*);
-	ThreadPool* operator=(const ThreadPool*);
-	~ThreadPool();
-
-protected:
-	// Some assistance methods
-	// Show which threadController has no job
-	ThreadController* checkFreedom();
+	// Run loop method controlling the job assignments
+	virtual void runLoop();
+	// How do you assign next thread controller 
+	// It will returna an exception if no valid reference
+	virtual std::unique_ptr<ThreadController>& nextController();
 
 	// OpenCV variables
-	cv::Mat				m_image;// Image of every frame
-
+	// Cascade name
+	const std::string cascadeName;
+	// Image of every frame
+	cv::Mat	m_image;
 	// Thread controller vector
-	std::vector<ThreadController*> m_controllerVec;
+	std::vector<std::unique_ptr<ThreadController>> m_controllerVec;
 
-	// Use number of threads as a constant
-	static const unsigned int MAX_THREAD_NUM = 4;
+private:
+	ThreadPool(const ThreadPool&);
+	ThreadPool& operator=(const ThreadPool&);
+
+	// Begin running once initialized
+	virtual void Begin();
+
+	// number of threads
+	const unsigned int NUM_THREADS;
 };
 
-#endif

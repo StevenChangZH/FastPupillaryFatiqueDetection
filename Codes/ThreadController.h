@@ -1,48 +1,44 @@
-#include "stdafx.h"
 #pragma once
+#include "includes.h"
 
-#ifndef _THREAD_CONTROLLER_
-#define _THREAD_CONTROLLER_
-
-// The controller controls a thread and assign jobs 
-class ThreadController 
+// Controls a thread and do one job consistantly.
+// Notice the controller can only run once.
+class ThreadController
 {
-	// Set friend
-	friend class ThreadPool;
-
 public:
-	ThreadController(unsigned int id, const std::string& cascadeName);
-	~ThreadController(void);
+	ThreadController();
+	ThreadController(const std::string& s_cascade);
+	virtual ~ThreadController();
 
-	// Get thread id
-	unsigned int getId() const;
+	// Start running  - can only called once
+	// may throw std::runtime_error exception
+	virtual void start();
+	// Run loop control
+	virtual void runLoop();
+	// Job contexts within once tick
+	virtual void tick();
 
-	// If the thread has any job, modify this to control actions
-	bool hasJob;
-	// Terminated semaphore
-	bool isTerminated;
+	// Set & Get the semophare
+	// do job once
+	virtual void doJob();
+	virtual bool hasJob() const;
+	// Terminate - can only called once
+	virtual void terminate();
+	virtual bool isTerminated() const;
 
-	// The copy-and-write image
+	// The copy-by-value image
+	// You can opt on it 
 	cv::Mat frame_img;
 
 protected:
-	// Run loop method, keep it running consistantly and assign jobs
-	virtual void runLoopControl();
-
-	// THE thread
 	std::thread m_thread;
-	// id
-	const unsigned int id;
-	// cascade
-	cv::CascadeClassifier cv_cascade;
 
-private:
-	// Those methods should only be used by ThreadPool
-	// Start method, used to call detach method
-	void start();
+	// Job assignment semophare
+	bool m_hasJob;
+	// Termination semophare
+	bool m_isTerminated;
 
-	// Pupillay detection & analysis method, used in ThreadController::runLoopControl
-	void detectPupil();
+	// OpenCV variables
+	cv::CascadeClassifier classifier;
 };
 
-#endif

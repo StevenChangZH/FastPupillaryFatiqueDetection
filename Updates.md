@@ -25,3 +25,6 @@ Update record file
 **Version 1.3.2**
 * `Uninheritable.h` deprecated. Use final instead.
 * Reconstruct the SingletonGrabber
+
+**Version 1.4**
+* Reconstruct all codes without no leaks.

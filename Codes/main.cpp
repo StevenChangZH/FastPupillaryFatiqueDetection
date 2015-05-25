@@ -8,9 +8,8 @@ using namespace cv;
 
 int main(int argc, char* argv[])
 {
-	SingletonGrabber<ThreadPool> grabber;
+	SingletonGrabber<ThreadPool> grabber(new ThreadPool());
 	std::unique_ptr<ThreadPool>& pool = grabber.getInstance();
-	pool->start();
 	pool->runLoop();
 	return 0;
 }

@@ -1,18 +1,51 @@
 #include "ThreadPool.h"
 
 
-void ThreadPool::start()
+ThreadPool::ThreadPool():
+	NUM_THREADS(4), cascadeName("haarcascade_eye_tree_eyeglasses.xml")
 {
-	// Call ThreadController::start method
-	std::for_each( m_controllerVec.begin(), m_controllerVec.end(), 
-		[] (ThreadController* pController) {
-		pController->start(); } );
+	// NO delegate ctor as well - Ohhhhhhh...
+	// Well, I think using another funciton called "initialize" is quite stupid.
+	// You think so?
+
+	// Initialize the m_image
+	m_image = cvCreateImage( cv::Size( 640, 480 ), 8, 1 );
+
+	// 4 threads as default
+	for ( unsigned int i=0; i<NUM_THREADS; ++i ) {
+		std::unique_ptr<ThreadController> pController( new ThreadController( cascadeName ) );
+		this->m_controllerVec.push_back( std::move( pController ) );
+	}
+
+	// Begin running
+	this->Begin();
+}
+
+ThreadPool::ThreadPool(unsigned int tNum, const std::string& cName):
+	NUM_THREADS(tNum), cascadeName(cName)
+{
+	// Initialize the m_image
+	m_image = cvCreateImage( cv::Size( 640, 480 ), 8, 1 );
+
+	// 4 threads as default
+	for ( unsigned int i=0; i<NUM_THREADS; ++i ) {
+		std::unique_ptr<ThreadController> pController( new ThreadController( cascadeName ) );
+		this->m_controllerVec.push_back( std::move( pController ) );
+	}
+	
+	// Begin running
+	this->Begin();
+}
+
+ThreadPool::~ThreadPool()
+{
+	// Nothing need to do!
 }
 
 void ThreadPool::runLoop()
 {
 	int pressedKey = 0;// used to control keyboard event
-	CvCapture *imageCapture;// Capture struct
+	CvCapture* imageCapture;// Capture struct
 
     // Initialize camera
     imageCapture = cvCaptureFromCAM( 0 );
@@ -21,67 +54,58 @@ void ThreadPool::runLoop()
     // Create a window named 'result' - USE IT ONLY.
     cvNamedWindow( "result", 1 );
 
-	int q=0;
+	//int q=0;
 	// If 'q' pressed terminated
 	while ( pressedKey != 'q' ) {
 
-		// Run
-		ThreadController* pController = this->checkFreedom();
-		if ( pController != nullptr ) {
-			// not a nullptr, do something
+		try {
+			std::unique_ptr<ThreadController>& pController = this->nextController();
+			// If excepton throwed then the following work will not be done
+
 			// Capture image
 			m_image = cvQueryFrame( imageCapture );
 			//if ( !m_image ) break;
 
 			// Set the semaphore to trigger the event
-			pController->hasJob = true;
+			pController->doJob();
 			// Copy the frame
-			pController->frame_img = m_image( cv::Rect( 120, 100, 400, 200) );
+			pController->frame_img = m_image( cv::Rect( 170, 100, 300, 160) );
+
+		} catch (const std::bad_exception& excp) {
+			// do nothing, skip this loop
 		}
-		++q;
+
+		//++q;
 		pressedKey = cvWaitKey( 30 );
 	}
 
 	// Terminate all
 	std::for_each( m_controllerVec.begin(), m_controllerVec.end(),
-		[] ( ThreadController* pController ) {
-			pController->isTerminated = true; } );
+		[] ( std::unique_ptr<ThreadController>& pController ) {
+			pController->terminate(); } );
 
 	// Release the memory
 	cvReleaseCapture( &imageCapture );
 	cvDestroyWindow( "result" );
 }
 
-ThreadPool::ThreadPool(void):
-	cascadeName("haarcascade_eye_tree_eyeglasses.xml")
+std::unique_ptr<ThreadController>& ThreadPool::nextController()
 {
-	// Initialize the m_image
-	m_image = cvCreateImage( cv::Size( 640, 480 ), 8, 1 );
-
-	// 4 threads as default
-	for ( unsigned int i=0; i<MAX_THREAD_NUM; ++i ) {
-		ThreadController* pController = new ThreadController( i, cascadeName );
-		this->m_controllerVec.push_back( pController );
-	}
-}
-
-ThreadPool::~ThreadPool(void)
-{
-	// Delete and release controllers
-	std::for_each( m_controllerVec.begin(), m_controllerVec.end(),
-		[] ( ThreadController* pController ) {
-			delete pController; pController = nullptr; } );
-	m_controllerVec.clear();
-}
-
-ThreadController* ThreadPool::checkFreedom() 
-{
-	// returns the ptr as current threadController
-	// if all threadController having jobs, return nullptr.
-	std::vector<ThreadController*>::iterator iter;
+	// returns the index as current threadController
+	// if all threadController having jobs, return the null ref.
+	auto iter = m_controllerVec.begin();
 	for ( iter = m_controllerVec.begin(); iter != m_controllerVec.end(); ++iter ) {
-		ThreadController* pController = (ThreadController*)*iter;
-		if ( !pController->hasJob ) return pController;
+		if ( !(*iter)->hasJob() ) return *iter;
 	}
-	return nullptr;
+
+	throw std::bad_exception( "[Exception] Return an nullref" );
+	return nullref(std::unique_ptr<ThreadController>);
+}
+
+void ThreadPool::Begin()
+{
+	// Call ThreadController::start method
+	std::for_each( m_controllerVec.begin(), m_controllerVec.end(), 
+		[] (std::unique_ptr<ThreadController>& pController) {
+		pController->start(); } );
 }

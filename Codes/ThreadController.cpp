@@ -1,62 +1,74 @@
 #include "ThreadController.h"
 
 
-ThreadController::ThreadController(unsigned int id, const std::string& cascadeName):
-	isTerminated(false), hasJob(false), id(id)
+ThreadController::ThreadController():
+	m_hasJob(false), m_isTerminated(false)
 {
-	// Load the file to construct a cascade
-	cv_cascade.load( cascadeName );
+	// Delegate ctor not supported in VS2012 - Fxxk it $%^&^%$
+	// Load the file to construct a cascade classifier
+	classifier.load( "haarcascade_eye_tree_eyeglasses.xml" );
 
 	// Register the thread
 	this->m_thread = std::thread( [this] { 
-		this->runLoopControl(); } );
+		this->runLoop(); } );
+}
+
+ThreadController::ThreadController(const std::string& s_cascade):
+	m_hasJob(false), m_isTerminated(false)
+{
+	// Load the file to construct a cascade classifier
+	classifier.load( s_cascade );
+
+	// Register the thread
+	this->m_thread = std::thread( [this] { 
+		this->runLoop(); } );
 }
 
 ThreadController::~ThreadController(void)
 {
 }
 
-unsigned int ThreadController::getId() const
-{
-	return this->id;
+void ThreadController::start()
+try {
+	if ( m_thread.joinable() ) {
+		// Yes, detach but not join
+		this->m_thread.detach();
+	} else {
+		throw std::runtime_error( "[EXCEPTION] Attempt to recall detach method for a unjoinable thread" );
+	}
+} catch (const std::runtime_error& excp) {
+	// Attempt to recall the detach method
+	std::cerr << excp.what() << std::endl;
+	throw;
 }
 
-void ThreadController::runLoopControl()
+void ThreadController::runLoop()
 {
-	// Use isTerminated to check if needed to terminate
-	while ( !isTerminated ) {
-
-		// Use hasJob to check if needed to do a job
-		if ( hasJob ) {
+	while ( !m_isTerminated ) {
+		if ( m_hasJob ) {
 			// Do something
-			this->detectPupil();
+			this->tick();
 
 			// Set the semaphore back
-			hasJob = false;
+			m_hasJob = false;
 		}
 
-		// Use this to wait for 33 ms
+		// Sleep for a few ms
 		Sleep( 33 );
 	}
 }
 
-void ThreadController::start()
-{
-	// Detach!
-	this->m_thread.detach();
-}
-
-void ThreadController::detectPupil()
+void ThreadController::tick()
 {
 	// Get the gray image and perform hist equalization
-	std::vector<cv::Rect> eyes;
+	std::vector<cv::Rect> eyeRectVec;
 	cv::Mat frame_gray = cv::Mat( frame_img );
 	cvtColor( frame_gray, frame_gray, CV_BGR2GRAY );
 	equalizeHist( frame_gray, frame_gray );
 	
-	// Detect eyes && get time
+	// Detect eye && get time
 	double t = (double)cvGetTickCount();
-	cv_cascade.detectMultiScale( frame_gray , eyes,
+	classifier.detectMultiScale( frame_gray , eyeRectVec,
 		1.1, 2, 0
 		//|CV_HAAR_FIND_BIGGEST_OBJECT
 		//|CV_HAAR_DO_ROUGH_SEARCH
@@ -66,24 +78,20 @@ void ThreadController::detectPupil()
 	t = (double)cvGetTickCount() - t;
 	double t0=t/((double)cvGetTickFrequency()*1000.);
 	// Output
-	std::cout << "Thread: " << this->getId() <<
-		". Detection time = " << t0 << " ms, avg thread FPS= " <<
-		1000/t0 << ". Eyes: " << eyes.size() << std::endl;
+	std::cout << "Detection time = " << t0 << " ms, avg thread FPS= " <<
+		1000/t0 << ". eyeRectVec: " << eyeRectVec.size() << std::endl;
 	
 	// Calculate the pos
 	int i = 0;// Temp loop counter
-	for( std::vector<cv::Rect>::const_iterator r = eyes.begin(); 
-		r != eyes.end() && i < 2; ++r, ++i )
+	for( std::vector<cv::Rect>::iterator r = eyeRectVec.begin(); 
+		r != eyeRectVec.end() && i < 2; ++r, ++i )
 	{
-		cv::Point center;
+		r->height /= 2;
+		r->y += r->height/2;
+		cv::Point lefttop( r->x, r->y );
+		cv::Point rightdown( r->x+r->width, r->y+r->height );
 		cv::Scalar color = CV_RGB( 255, 255, 255 );
-		int radius;
-		//center is the coord of pupil
-		center.x = cvRound( r->x + r->width*0.5 );
-		center.y = cvRound( r->y + r->height*0.5 );
-		//radius = (int)(cvRound(r->width + r->height)*0.25);
-		radius = 2;
-		circle( frame_img, center, r->height/2, color, 1, 8, 0 );
+		rectangle( frame_img, lefttop, rightdown, color, 1, 8, 0 );
 	}
 	
 	// Show img
@@ -92,3 +100,15 @@ void ThreadController::detectPupil()
 	frame_gray.release();
 	frame_img.release();
 }
+
+void ThreadController::doJob()
+{ m_hasJob = true; }
+
+bool ThreadController::hasJob() const
+{ return m_hasJob; }
+
+void ThreadController::terminate()
+{ m_isTerminated = true; }
+
+bool ThreadController::isTerminated() const
+{ return m_isTerminated; }

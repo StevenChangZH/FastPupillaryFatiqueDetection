@@ -7,12 +7,12 @@
 template <class Singleton> class SingletonGrabber final
 {
 public:
-	SingletonGrabber();
+	explicit SingletonGrabber();
 	// ONLY use this if Singleton class has no default ctor
 	// that is, singleton must be a temporary object
 	explicit SingletonGrabber(Singleton*&& singleton) throw();
-	SingletonGrabber(const SingletonGrabber& grabber) { ++m_reference; }
-	SingletonGrabber& operator = (const SingletonGrabber& singleton) {} 
+	explicit SingletonGrabber(const SingletonGrabber& grabber) { ++m_reference; }
+	SingletonGrabber& operator = (const SingletonGrabber& singleton) { return *this; } 
 	virtual ~SingletonGrabber();
 	
 	// Use this to get instance instead of default constructors
@@ -37,7 +37,8 @@ template <class Singleton>
 SingletonGrabber<Singleton>::SingletonGrabber() 
 {
 	if ( m_pInstance == nullptr ) {
-		m_pInstance = std::unique_ptr<Singleton>();
+		//std::unique_ptr<Singleton> tp( new Singleton() );
+		m_pInstance = std::move( std::unique_ptr<Singleton>() );
 	}
 	++m_reference;
 }
@@ -46,7 +47,7 @@ template <class Singleton>
 SingletonGrabber<Singleton>::SingletonGrabber(Singleton*&& singleton) throw() 
 {
 	if ( m_pInstance == nullptr ) {
-		m_pInstance = std::unique_ptr<Singleton>( singleton );
+		m_pInstance = std::move( std::unique_ptr<Singleton>( singleton ) );
 		singleton = nullptr;
 	}
 	++m_reference;
