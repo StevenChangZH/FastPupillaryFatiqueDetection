@@ -12,7 +12,7 @@ public:
 	// that is, singleton must be a temporary object
 	explicit SingletonGrabber(Singleton*&& singleton) throw();
 	explicit SingletonGrabber(const SingletonGrabber& grabber) { ++m_reference; }
-	SingletonGrabber& operator = (const SingletonGrabber& singleton) { return *this; } 
+	SingletonGrabber& operator = (const SingletonGrabber& singleton) { return *this; }
 	virtual ~SingletonGrabber();
 	
 	// Use this to get instance instead of default constructors
