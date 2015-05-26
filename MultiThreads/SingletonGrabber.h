@@ -8,11 +8,12 @@ template <class Singleton> class SingletonGrabber final
 {
 public:
 	explicit SingletonGrabber();
-	// ONLY use this if Singleton class has no default ctor
+	// ONLY use this for ctors with params
 	// that is, singleton must be a temporary object
-	explicit SingletonGrabber(Singleton*&& singleton) throw();
+	// Like this: SingletonGrabber( new Singleton( args ) );
+	explicit SingletonGrabber(Singleton*&& singleton) throw();//noexcept;
 	explicit SingletonGrabber(const SingletonGrabber& grabber) { ++m_reference; }
-	SingletonGrabber& operator = (const SingletonGrabber& singleton) { return *this; }
+	SingletonGrabber& operator = (const SingletonGrabber& singleton) { return *this; } 
 	virtual ~SingletonGrabber();
 	
 	// Use this to get instance instead of default constructors
@@ -20,7 +21,7 @@ public:
 
 private:
 	// the instance
-	static std::unique_ptr<Singleton> m_pInstance;
+	static typename std::unique_ptr<Singleton> m_pInstance;
 	// the reference of this grabber
 	static unsigned int m_reference;
 };

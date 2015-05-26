@@ -28,3 +28,7 @@ Update record file
 
 **Version 1.4**
 * Reconstruct all codes without no leaks.
+
+**Version 1.4.1**
+* Transform all codes into Visual Studio 2013.
+* Add the Procedure folder to display algorithms.

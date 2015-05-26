@@ -2,16 +2,8 @@
 
 
 ThreadController::ThreadController():
-	m_hasJob(false), m_isTerminated(false)
-{
-	// Delegate ctor not supported in VS2012 - Fxxk it $%^&^%$
-	// Load the file to construct a cascade classifier
-	classifier.load( "haarcascade_eye_tree_eyeglasses.xml" );
-
-	// Register the thread
-	this->m_thread = std::thread( [this] { 
-		this->runLoop(); } );
-}
+	ThreadController("haarcascade_eye_tree_eyeglasses.xml")
+{}
 
 ThreadController::ThreadController(const std::string& s_cascade):
 	m_hasJob(false), m_isTerminated(false)
@@ -82,9 +74,8 @@ void ThreadController::tick()
 		1000/t0 << ". eyeRectVec: " << eyeRectVec.size() << std::endl;
 	
 	// Calculate the pos
-	int i = 0;// Temp loop counter
 	for( std::vector<cv::Rect>::iterator r = eyeRectVec.begin(); 
-		r != eyeRectVec.end() && i < 2; ++r, ++i )
+		r != eyeRectVec.end() && ( r - eyeRectVec.begin() ) < 2; ++r )
 	{
 		r->height /= 2;
 		r->y += r->height/2;

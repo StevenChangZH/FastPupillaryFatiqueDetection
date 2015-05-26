@@ -31,6 +31,8 @@ public:
 	cv::Mat frame_img;
 
 protected:
+	ThreadController& operator = (const ThreadController&) = delete;
+
 	std::thread m_thread;
 
 	// Job assignment semophare

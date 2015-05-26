@@ -15,7 +15,7 @@ public:
 	// Run loop method controlling the job assignments
 	virtual void runLoop();
 	// How do you assign next thread controller 
-	// It will returna an exception if no valid reference
+	// It will return an exception if no valid reference
 	virtual std::unique_ptr<ThreadController>& nextController();
 
 	// OpenCV variables
@@ -27,8 +27,9 @@ public:
 	std::vector<std::unique_ptr<ThreadController>> m_controllerVec;
 
 private:
-	ThreadPool(const ThreadPool&);
-	ThreadPool& operator=(const ThreadPool&);
+	// They should be deleted ctor/function but omitted instead
+	ThreadPool(const ThreadPool&) = delete;
+	ThreadPool& operator=(const ThreadPool&) = delete;
 
 	// Begin running once initialized
 	virtual void Begin();

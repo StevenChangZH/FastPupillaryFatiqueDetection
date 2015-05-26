@@ -2,23 +2,9 @@
 
 
 ThreadPool::ThreadPool():
-	NUM_THREADS(4), cascadeName("haarcascade_eye_tree_eyeglasses.xml")
+	ThreadPool(4, "haarcascade_eye_tree_eyeglasses.xml")
 {
-	// NO delegate ctor as well - Ohhhhhhh...
-	// Well, I think using another funciton called "initialize" is quite stupid.
-	// You think so?
-
-	// Initialize the m_image
-	m_image = cvCreateImage( cv::Size( 640, 480 ), 8, 1 );
-
-	// 4 threads as default
-	for ( unsigned int i=0; i<NUM_THREADS; ++i ) {
-		std::unique_ptr<ThreadController> pController( new ThreadController( cascadeName ) );
-		this->m_controllerVec.push_back( std::move( pController ) );
-	}
-
-	// Begin running
-	this->Begin();
+	// Thank god, now we can use delegate ctors.
 }
 
 ThreadPool::ThreadPool(unsigned int tNum, const std::string& cName):
@@ -27,7 +13,7 @@ ThreadPool::ThreadPool(unsigned int tNum, const std::string& cName):
 	// Initialize the m_image
 	m_image = cvCreateImage( cv::Size( 640, 480 ), 8, 1 );
 
-	// 4 threads as default
+	// Add threads
 	for ( unsigned int i=0; i<NUM_THREADS; ++i ) {
 		std::unique_ptr<ThreadController> pController( new ThreadController( cascadeName ) );
 		this->m_controllerVec.push_back( std::move( pController ) );
@@ -69,9 +55,9 @@ void ThreadPool::runLoop()
 			// Set the semaphore to trigger the event
 			pController->doJob();
 			// Copy the frame
-			pController->frame_img = m_image( cv::Rect( 170, 100, 300, 160) );
+			pController->frame_img = m_image( cv::Rect( 170, 100, 300, 160 ) );
 
-		} catch (const std::bad_exception& excp) {
+		} catch (const std::bad_exception&) {
 			// do nothing, skip this loop
 		}
 
