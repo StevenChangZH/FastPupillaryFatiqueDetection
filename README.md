@@ -30,7 +30,8 @@ Codes in this folder is the final version of our project.
 * `haarcascade_eye_tree_eyeglasses.xml`: classifier you can find from OpenCV.
 
 ### Procedure Folder
-Codes in this folder displays how our algorithms processing an image.**Notice: Codes in this folder will not need explicit IDE. Only OpenCV environemnt needed.**
+Codes in this folder displays how our algorithms processing an image.
+**Notice: Codes in this folder will not need explicit IDE. Only OpenCV environemnt needed.**
 
 * `main.cpp`: program entrance and processing this [image](http://www.nipic.com/show/1/11/fe8b096e1238b796.html).
 * `includes.h`: include all headers.
