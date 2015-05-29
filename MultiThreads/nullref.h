@@ -45,7 +45,7 @@ public:
 #define nullref(Type) *((Type*)(nullptr))
 #define NULLREF _NULLREF_
 
-// Overload this two operators
+// Overload the two operators
 template <typename T>
 bool operator==(const typename T& ref, const _CLS_NULLREF&)
 {
