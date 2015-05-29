@@ -32,3 +32,7 @@ Update record file
 **Version 1.4.1**
 * Transform all codes into Visual Studio 2013.
 * Add the Procedure folder to display algorithms.
+
+**Version 1.5**
+* In `Procedure` folder, now we can detect pupillary diameter from an image.
+* Add `CVEx.h` providing extended methods.

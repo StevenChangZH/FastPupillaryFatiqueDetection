@@ -11,16 +11,15 @@ How to use it: create a project in your vs, add OpenCV environment and add codes
 
 However, please notice:
 
-* C++11 is used, so you might need a latest C++ compiler. The IDE I used is Visual Studio 2013. I advise you not use earlier IDE for you might have problems compiling it. 
+* Use C++11 standards and IDE is VS2013.
 * And OpenCV version is 2.4.11.
 * windows.h is needed. I will try to remove it to support more platforms.
-* Using Visual Leak Detector (2.4RC) as memory leak detector. However, it seems that it cannot detect all leaks in multi-thread mode.
+* Visual Leak Detector (2.4RC) as memory leak detector.
 
 ## Files
 
 ### Multithreads Folder
 Codes in this folder is the final version of our project.
-**Notice: Codes in this folder will not need explicit IDE. Only OpenCV environemnt needed.**
 
 * `main.cpp`: program entrance.
 * `includes.h`: include all headers.
@@ -31,8 +30,9 @@ Codes in this folder is the final version of our project.
 * `haarcascade_eye_tree_eyeglasses.xml`: classifier you can find from OpenCV.
 
 ### Procedure Folder
-Codes in this folder displays how our algorithms processing an image.
+Codes in this folder displays how our algorithms processing an image.**Notice: Codes in this folder will not need explicit IDE. Only OpenCV environemnt needed.**
 
 * `main.cpp`: program entrance and processing this [image](http://www.nipic.com/show/1/11/fe8b096e1238b796.html).
 * `includes.h`: include all headers.
+* `CVEx.h`: extend OpenCV algorithms and used in main.cpp
 * `haarcascade_eye_tree_eyeglasses.xml`: classifier you can find from OpenCV.
