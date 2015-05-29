@@ -23,7 +23,8 @@ Codes in this folder is the final version of our project.
 
 * `main.cpp`: program entrance.
 * `includes.h`: include all headers.
-* `ThreadController.h/cpp`: controls a thread and its method. Modify your actions within ThreadController::runLoopControl() method.
+* `nullref.h`: provide nullref realization.
+* `ThreadController.h/cpp`: controls a thread and its method. Modify your actions within ThreadController::runLoop() method.
 * `ThreadPool.h/cpp`: a thread pool. Also it is a singleton - but not use it directly. Use SingletonGrabber to access the instance.
 
 * `SingletonGrabber.h`: encapsulate a static singleton instance to realize singleton design pattern.

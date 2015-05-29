@@ -23,7 +23,7 @@ ThreadController::~ThreadController(void)
 void ThreadController::start()
 try {
 	if ( m_thread.joinable() ) {
-		// Yes, detach but not join
+		// Yes, detach but join
 		this->m_thread.detach();
 	} else {
 		throw std::runtime_error( "[EXCEPTION] Attempt to recall detach method for a unjoinable thread" );

@@ -27,7 +27,6 @@ public:
 	std::vector<std::unique_ptr<ThreadController>> m_controllerVec;
 
 private:
-	// They should be deleted ctor/function but omitted instead
 	ThreadPool(const ThreadPool&) = delete;
 	ThreadPool& operator=(const ThreadPool&) = delete;
 

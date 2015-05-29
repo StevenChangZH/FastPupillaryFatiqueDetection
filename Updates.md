@@ -36,3 +36,7 @@ Update record file
 **Version 1.5**
 * In `Procedure` folder, now we can detect pupillary diameter from an image.
 * Add `CVEx.h` providing extended methods.
+
+**Version 1.5.1**
+* Small adjustments.
+* Bug detected: codes in multithreads folder will have two memory leaks (CvCapture in ThreadPool::runLoop()) at x64 debug mode but no leaks in win32 debug mode.

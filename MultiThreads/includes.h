@@ -22,10 +22,5 @@
 // Memory leak analysis - Visual Leak Detector
 //#include <vld.h>
 
-
-
-// Global defines
-
-// a null ref same as nullptr
-// NEVER use comparison operator, use exception if returns an nullref.
-#define nullref(type) (*((type*)(nullptr)))
+// Personal includes
+#include "nullref.h"

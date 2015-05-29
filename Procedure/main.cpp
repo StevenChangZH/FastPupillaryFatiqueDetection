@@ -5,8 +5,13 @@ float ProcessSingleEye(cv::Mat& eyeROI);
 void DetectChord(cv::Mat& row, float& chord, const int& criticalValue = 18);
 float CalculateDiameter(float c1, float c2, float c3, float dx);
 
+cv::Mat kernel = cv::getGaussianKernel(3, 0.05);
+
 int main(int argc, char* argv[])
 {
+	// It is more like a MatLab Command Window but C++ programming Design.
+	// Realization without performance optimization.
+
 	cv::CascadeClassifier cv_cascade;
 	cv_cascade.load( "haarcascade_eye_tree_eyeglasses.xml" );
 	// Get the gray image and perform hist equalization
@@ -17,7 +22,7 @@ int main(int argc, char* argv[])
 	equalizeHist( frame_gray, frame_gray );
 	
 	// Detect eye && get time
-	double t = (double)cvGetTickCount();
+	//double t = (double)cvGetTickCount();
 	cv_cascade.detectMultiScale( frame_gray , eyeRectVec,
 		1.1, 2, 0
 		//|CV_HAAR_FIND_BIGGEST_OBJECT
@@ -32,24 +37,23 @@ int main(int argc, char* argv[])
 	std::cout << "Detection time = " << t0 << " ms, avg thread FPS= " <<
 		1000/t0 << ". eyeRectVec: " << eyeRectVec.size() << std::endl;
 	*/
-	
+
+	double t = (double)cvGetTickCount();
 	// Calculate the pos
 	for( std::vector<cv::Rect>::iterator r = eyeRectVec.begin(); 
 		r != eyeRectVec.end() && ( r - eyeRectVec.begin() ) < 2; ++r )
 	{
 		r->height /= 2;
 		r->y += r->height/2;
-
+		
 		cv::Point lefttop( r->x, r->y );
 		cv::Point rightdown( r->x+r->width, r->y+r->height );
 		cv::Scalar color = CV_RGB( 255, 255, 255 );
 		rectangle( frame_img, lefttop, rightdown, color, 1, 8, 0 );
 	}
 
-	cv::Rect& leftRect = eyeRectVec[0];
-	cv::Rect& rightRect = eyeRectVec[1];
-	cv::Mat leftROI = frame_img( leftRect );
-	cv::Mat rightROI = frame_img( rightRect );
+	cv::Mat leftROI = frame_img( eyeRectVec[0] );
+	cv::Mat rightROI = frame_img( eyeRectVec[1] );
 	/*
 	cv::line( leftROI, cv::Point( 0, leftRect.height/2 ), cv::Point( leftRect.width, leftRect.height/2 ),
 		CV_RGB( 255, 255, 255 ), 1, 8, 0 );
@@ -118,33 +122,40 @@ int main(int argc, char* argv[])
 float ProcessSingleEye(cv::Mat& eyeROI)
 {
 	// Preprocessing
-	cv::Mat eyeGray(eyeROI);
+	// Eliminate catchlights
+	cv::Mat eyeGray;
 	cvtColor(eyeROI, eyeGray, CV_BGR2GRAY);
 	cvEx::mat_foreach(eyeGray, [](uchar& c, int&) {
 		if (c > 130)c = 20;
 	});
 	//imshow("result", eyeGray);
-	// Eliminate catchlights
-	cv::Mat rightGrayAdjused(eyeGray);
-	cv::Mat kernel = cv::getGaussianKernel(3, 0.05);
-	erode(eyeGray, rightGrayAdjused, kernel, cv::Point(-1, -1), 1);
-	dilate(rightGrayAdjused, rightGrayAdjused, kernel, cv::Point(-1, -1), 1);
-	//imshow("result2", rightGrayAdjused);
+	cv::Mat eyeGrayAdjusted;
+	morphologyEx(eyeGray,eyeGrayAdjusted, CV_MOP_OPEN, kernel);
+	//imshow("result2", eyeGrayAdjusted);
 
+	// Half of chords
 	float chord1, chord2, chord3;
+	// Width of two rows
 	float dx = 3;
+	// Critical of pupilla intensity
 	int criticalValue = 19;
 
 	// Split center lines and get chords
-	cv::Mat row1(rightGrayAdjused.row(static_cast<int>(rightGrayAdjused.rows / 2)));
+	cv::Mat row1(eyeGrayAdjusted.row(static_cast<int>(eyeGrayAdjusted.rows / 2)));
 	DetectChord(row1, chord1, criticalValue);
-	cv::Mat row2(rightGrayAdjused.row(static_cast<int>(rightGrayAdjused.rows / 2 + 3)));
+	cv::Mat row2(eyeGrayAdjusted.row(static_cast<int>(eyeGrayAdjusted.rows / 2 + dx)));
 	DetectChord(row2, chord2, criticalValue);
-	cv::Mat row3(rightGrayAdjused.row(static_cast<int>(rightGrayAdjused.rows / 2 + 6)));
+	cv::Mat row3(eyeGrayAdjusted.row(static_cast<int>(eyeGrayAdjusted.rows / 2 + dx)));
 	DetectChord(row3, chord3, criticalValue);
 
 	// Calculate diamter
 	float diameter =  CalculateDiameter(chord1, chord2, chord3, dx);
+
+	row3.release();
+	row2.release();
+	row1.release();
+	eyeGrayAdjusted.release();
+	eyeGray.release();
 	return diameter;
 }
 
@@ -162,42 +173,40 @@ void DetectChord(cv::Mat& row, float& chord, const int& criticalValue)
 	// Left bounds
 
 	auto it = dataVecGray.begin() + static_cast<int>(dataVecGray.size() / 2);
-	int centerCrValue = static_cast<int>(*it);
-	int colorSum = centerCrValue;
-	int colorCount = 1;
+	int centerIntensity = static_cast<int>(*it);
+	int intensityUpB = centerIntensity + criticalValue;
+	int intensityDownB = centerIntensity - criticalValue;
+	//int colorSum = centerIntensity;
+	//int colorCount = 1;
 	for (; it != dataVecGray.begin(); --it) {
 
-		++colorCount;
+		//++colorCount;
 		int tpValue = static_cast<int>(*it);
-		colorSum += tpValue;
-		if (centerCrValue - criticalValue < tpValue
-			&& tpValue < centerCrValue + criticalValue) {
-		}
-		else {
+		//colorSum += tpValue;
+		if (intensityDownB >= tpValue
+			&& tpValue >= intensityUpB) {
 			break;
 		}
 	}
-	int lBound = it - dataVecGray.begin();
+	float lBound = static_cast<float>(it - dataVecGray.begin());
 
 	// right bound
 	
-	colorSum = centerCrValue;
-	colorCount = 1;
+	//colorSum = centerCrValue;
+	//colorCount = 1;
 	for (it = dataVecGray.begin() + static_cast<int>(dataVecGray.size() / 2);
 		it != dataVecGray.end(); ++it) {
 
-		++colorCount;
+		//++colorCount;
 		int tpValue = static_cast<int>(*it);
-		colorSum += tpValue;
-		if (centerCrValue - criticalValue < tpValue
-			&& tpValue < centerCrValue + criticalValue) {
-		}
-		else {
+		//colorSum += tpValue;
+		if (intensityDownB >= tpValue
+			&& tpValue >= intensityUpB) {
 			break;
 		}
 	}
-	int rBound = it - dataVecGray.begin();
-	chord = static_cast<float>(rBound - lBound)/2;
+	float rBound = static_cast<float>(it - dataVecGray.begin());
+	chord = (rBound - lBound)/2;
 }
 
 float CalculateDiameter(float c1, float c2, float c3, float dx)
@@ -210,21 +219,21 @@ float CalculateDiameter(float c1, float c2, float c3, float dx)
 	//std::cout << abs(c2*c2 * 2 / (c1*c1 - c3*c3 - 2 * dx*dx) / 4 / dx / dx);
 	//std::cout << std::endl;
 
-	// First judge c1>=c3?
+	// Judge c1>=c3?
 	float diameter = 0;
-	if (c1 - c3>=0) {
+	if (c1 >= c3) {
 		// 1,2
 		// Use c2 to adjust the deltad
-		deltad += abs((c2*c2 - c3_sqr) / 2 / dx - 3 * dx / 2);
+		deltad += abs((c2*c2 - c3_sqr) / 2 / dx - dx / 2 - dx);
 		deltad /= 2;
 		diameter = sqrt(c1_sqr + deltad*deltad);
 	} else {
 		// 3,4
 		// Use c2 to adjust the deltad
-		deltad += abs((c2*c2 - c1_sqr) / 2 / dx - 3 * dx / 2);
+		deltad += abs((c2*c2 - c1_sqr) / 2 / dx - dx / 2 - dx);
 		deltad /= 2;
 		diameter = sqrt(c3_sqr + deltad*deltad);
 	}
 	
-	return diameter;
+	return diameter+diameter;
 }

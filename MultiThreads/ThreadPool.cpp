@@ -3,9 +3,7 @@
 
 ThreadPool::ThreadPool():
 	ThreadPool(4, "haarcascade_eye_tree_eyeglasses.xml")
-{
-	// Thank god, now we can use delegate ctors.
-}
+{}
 
 ThreadPool::ThreadPool(unsigned int tNum, const std::string& cName):
 	NUM_THREADS(tNum), cascadeName(cName)
@@ -30,17 +28,15 @@ ThreadPool::~ThreadPool()
 
 void ThreadPool::runLoop()
 {
-	int pressedKey = 0;// used to control keyboard event
-	CvCapture* imageCapture;// Capture struct
+	int pressedKey = 0;// used to record keyboard event
 
-    // Initialize camera
-    imageCapture = cvCaptureFromCAM( 0 );
-    // Check 
-    assert( imageCapture );
+    // Initialize camera 
+	CvCapture* imageCapture = cvCaptureFromCAM(0);
+	assert(imageCapture);
+
     // Create a window named 'result' - USE IT ONLY.
     cvNamedWindow( "result", 1 );
 
-	//int q=0;
 	// If 'q' pressed terminated
 	while ( pressedKey != 'q' ) {
 
@@ -52,16 +48,15 @@ void ThreadPool::runLoop()
 			m_image = cvQueryFrame( imageCapture );
 			//if ( !m_image ) break;
 
+			// Copy the frame first
+			pController->frame_img = m_image(cv::Rect(170, 100, 300, 160));
 			// Set the semaphore to trigger the event
 			pController->doJob();
-			// Copy the frame
-			pController->frame_img = m_image( cv::Rect( 170, 100, 300, 160 ) );
 
 		} catch (const std::bad_exception&) {
 			// do nothing, skip this loop
 		}
 
-		//++q;
 		pressedKey = cvWaitKey( 30 );
 	}
 
@@ -71,8 +66,9 @@ void ThreadPool::runLoop()
 			pController->terminate(); } );
 
 	// Release the memory
+	m_image.release();
 	cvReleaseCapture( &imageCapture );
-	cvDestroyWindow( "result" );
+	cvDestroyAllWindows();
 }
 
 std::unique_ptr<ThreadController>& ThreadPool::nextController()

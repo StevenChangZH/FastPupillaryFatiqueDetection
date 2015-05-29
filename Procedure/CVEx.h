@@ -12,7 +12,8 @@ namespace cvEx{
 	// caputure each element and index counter(from 0)
 	inline void mat_foreach(cv::Mat& mat, FUNC_& func_)
 	{
-		int size = mat.rows * mat.cols * ( mat.elemSize() / sizeof(DataElem_) );
+		int size = static_cast<int>(mat.rows * mat.cols * 
+			( mat.elemSize() / sizeof(DataElem_) ));
 		DataElem_* dPtr = const_cast<uchar*>( mat.ptr() );
 		for (int i = 0; i < size; ++i) {
 			func_( *(dPtr + i), i );
@@ -42,8 +43,7 @@ namespace cvEx{
 			}
 
 			func_( pixel, i );
-			// May not work, but I still do this.
-			vec.push_back( std::move( pixel ) );
+			vec.push_back( pixel );
 		}
 		return vec;
 	}
