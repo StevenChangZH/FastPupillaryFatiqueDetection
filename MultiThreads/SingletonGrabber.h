@@ -1,6 +1,4 @@
 #pragma once
-#ifndef _SINGLETON_GRABBER_
-#define _SINGLETON_GRABBER_
 #include "includes.h"
 
 // Use this instead of Singleton class directly.
@@ -26,7 +24,6 @@ private:
 	static unsigned int m_reference;
 };
 
-#endif
 
 template <class Singleton>
 std::unique_ptr<Singleton> SingletonGrabber<Singleton>::m_pInstance = nullptr;

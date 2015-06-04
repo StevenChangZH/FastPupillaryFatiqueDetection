@@ -22,9 +22,7 @@ ThreadPool::ThreadPool(unsigned int tNum, const std::string& cName):
 }
 
 ThreadPool::~ThreadPool()
-{
-	// Nothing need to do!
-}
+{}
 
 void ThreadPool::runLoop()
 {
@@ -81,7 +79,7 @@ std::unique_ptr<ThreadController>& ThreadPool::nextController()
 	}
 
 	throw std::bad_exception( "[Exception] Return an nullref" );
-	return nullref(std::unique_ptr<ThreadController>);
+	return NULLREF(std::unique_ptr<ThreadController>);
 }
 
 void ThreadPool::Begin()

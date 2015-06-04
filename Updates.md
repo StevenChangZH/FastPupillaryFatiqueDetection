@@ -40,3 +40,6 @@ Update record file
 **Version 1.5.1**
 * Small adjustments.
 * Bug detected: codes in multithreads folder will have two memory leaks (CvCapture in ThreadPool::runLoop()) at x64 debug mode but no leaks in win32 debug mode.
+
+**Version 1.5.2**
+* Optimize the codes.

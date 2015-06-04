@@ -55,10 +55,10 @@ namespace cvEx{
 	cvEx::mat_foreach
 		cv::Mat mt;
 		std::vector<uchar> dataVecGray;
-		cvEx::mat_foreach( mt, [&dataVecGray](uchar& c, int&){
+		cvEx::mat_foreach( mt, [&dataVecGray](uchar& c, int){
 			dataVecGray.push_back(c); } );
 
 	cvEX::vec_mat_foreach:
 		cv::Mat mt;
-		auto dataVec = cvEx::vec_mat_foreach( mt, [](cv::Vec3b&, int&){} );
+		auto dataVec = cvEx::vec_mat_foreach( mt, [](cv::Vec3b&, int){} );
 */

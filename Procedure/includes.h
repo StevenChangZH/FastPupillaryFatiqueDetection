@@ -21,3 +21,6 @@
 
 // Memory leak analysis - Visual Leak Detector
 //#include <vld.h>
+
+// Personal includes
+#include "nullref.h"
