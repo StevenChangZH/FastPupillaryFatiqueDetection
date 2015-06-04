@@ -47,7 +47,7 @@ void ThreadPool::runLoop()
 			//if ( !m_image ) break;
 
 			// Copy the frame first
-			pController->frame_img = m_image(cv::Rect(170, 100, 300, 160));
+			pController->SynchronizeData(m_image);
 			// Set the semaphore to trigger the event
 			pController->doJob();
 

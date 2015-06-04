@@ -24,9 +24,10 @@ Codes in this folder is the final version of our project.
 * `main.cpp`: program entrance.
 * `includes.h`: include all headers.
 * `nullref.h`: provide nullref realization.
+* `CVEx.h`: extend OpenCV algorithms and used in main.cpp
 * `ThreadController.h/cpp`: controls a thread and its method. Modify your actions within ThreadController::runLoop() method.
 * `ThreadPool.h/cpp`: a thread pool. Also it is a singleton - but not use it directly. Use SingletonGrabber to access the instance.
-
+* `ThreadJob.h/cpp`: algorithm processing the image and get the diameter.
 * `SingletonGrabber.h`: encapsulate a static singleton instance to realize singleton design pattern.
 * `haarcascade_eye_tree_eyeglasses.xml`: classifier you can find from OpenCV.
 

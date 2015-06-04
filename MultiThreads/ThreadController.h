@@ -1,5 +1,6 @@
 #pragma once
 #include "includes.h"
+#include "ThreadJob.h"
 
 // Controls a thread and do one job consistantly.
 // Notice the controller can only run once.
@@ -15,8 +16,8 @@ public:
 	virtual void start();
 	// Run loop control
 	virtual void runLoop();
-	// Job contexts within once tick
-	virtual void tick();
+	// Synchronize data
+	virtual void SynchronizeData(cv::Mat&);
 
 	// Set & Get the semophare
 	// do job once
@@ -26,21 +27,17 @@ public:
 	virtual void terminate();
 	virtual bool isTerminated() const;
 
-	// The copy-by-value image
-	// You can opt on it 
-	cv::Mat frame_img;
-
 protected:
 	ThreadController& operator = (const ThreadController&) = delete;
 
+	// the thread
 	std::thread m_thread;
+	// the job
+	std::unique_ptr<ThreadJob> m_job;
 
 	// Job assignment semophare
 	bool m_hasJob;
 	// Termination semophare
 	bool m_isTerminated;
-
-	// OpenCV variables
-	cv::CascadeClassifier classifier;
 };
 

@@ -12,7 +12,9 @@
 #include <iostream>
 #include <memory>
 #include <thread>
+#include <mutex>
 #include <stdexcept>
+#include <functional>
 // STL
 #include <vector>
 
@@ -24,3 +26,4 @@
 
 // Personal includes
 #include "nullref.h"
+#include "CVEx.h"
