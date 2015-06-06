@@ -9,7 +9,7 @@
 //
 
 #pragma once
-#include "ContinuousPool.h"
+#include "Threads\ContinuousPool.h"
 #include "PDThreadController.h"
 
 template <size_t NUM_THREADS = 4>

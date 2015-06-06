@@ -9,7 +9,7 @@
 //
 
 #pragma once
-#include "ContinuousController.h"
+#include "Threads\ContinuousController.h"
 #include "PDThreadJob.h"
 
 // thread controller of this project

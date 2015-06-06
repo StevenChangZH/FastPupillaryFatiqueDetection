@@ -16,12 +16,12 @@ _NAMESPACE_STL_THREAD_POOL_START_
 
 template <typename ThreadController, size_t NUM_THREADS = 4>
 class ContinuousPool : public AbstractThreadPool {
-	using TC = ThreadController;
-	using CP = ContinuousPool < ThreadController, NUM_THREADS>;
+	using TConctroller = ThreadController;
+	using CPool = ContinuousPool < ThreadController, NUM_THREADS>;
 
 public:
 	ContinuousPool();
-	CP& operator=(const CP&&) const throw();//_NOEXCEPT
+	CPool& operator=(const CPool&&) const throw();//_NOEXCEPT
 	virtual ~ContinuousPool();
 
 	// Run loop method controlling the job assignments
@@ -32,10 +32,10 @@ protected:
 	virtual void Begin();
 	// How do you assign next thread controller 
 	// It will return an exception if no valid reference
-	virtual std::unique_ptr<TC>& nextController();
+	virtual std::unique_ptr<TConctroller>& nextController();
 
 	// Thread controller vector
-	std::vector<std::unique_ptr<TC>> m_controllerVec;
+	std::vector<std::unique_ptr<TConctroller>> m_controllerVec;
 
 private:
 	ContinuousPool(const ContinuousPool&) = delete;

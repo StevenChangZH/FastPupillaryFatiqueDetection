@@ -17,16 +17,26 @@ template <typename T> struct _SINGLETON_GRABBER_MUTEX_ {
 };
 
 
+
 template <typename Singleton> 
 class SingletonGrabber final {
 public:
-	explicit SingletonGrabber();
-	explicit SingletonGrabber(const SingletonGrabber& grabber) { ++m_reference; }
+	SingletonGrabber();
+	SingletonGrabber(const SingletonGrabber<Singleton>& grabber) { ++m_reference; }
+	SingletonGrabber(const SingletonGrabber<Singleton>&& grabber) { }
+	template <class... Args>
+	// It's silly to define a bool DIRECTCONSTRUCT, but we need a way to separate
+	// Input true - or use GetGrabber() function instead.
+	SingletonGrabber(bool&& DIRECTCONSTRUCT, Args&... args);
+
 	SingletonGrabber& operator = (const SingletonGrabber& singleton) { return *this; } 
 	virtual ~SingletonGrabber();
 	
+	template <typename... Args>
+	// return a grabber with constructing a singleton instance with arguments.
+	static SingletonGrabber GetGrabber(Args& ...args);
 	// Use this to get instance instead of default constructors
-	virtual std::unique_ptr<Singleton>& GetInstance() final;
+	static std::unique_ptr<Singleton>& GetInstance();
 
 private:
 	// the instance
@@ -59,6 +69,18 @@ SingletonGrabber<Singleton>::SingletonGrabber()
 }
 
 template <typename Singleton>
+template <typename... Args>
+SingletonGrabber<Singleton>::SingletonGrabber(bool&& DIRECTCONSTRUCT, Args&... args)
+{
+	// If the m_pInstance has been existed, omit the args
+	std::lock_guard<std::mutex> lock(m_sgmutex._m_mutex);
+	if (m_pInstance == nullptr) {
+		m_pInstance = std::make_unique<typename Singleton>(args...);
+	}
+	++m_reference;
+}
+
+template <typename Singleton>
 SingletonGrabber<Singleton>::~SingletonGrabber()
 {
 	std::lock_guard<std::mutex> lock(m_sgmutex._m_mutex);
@@ -67,6 +89,14 @@ SingletonGrabber<Singleton>::~SingletonGrabber()
 		m_pInstance = nullptr;
 	}
 }
+
+template <typename Singleton>
+template <typename... Args>
+static SingletonGrabber<Singleton> SingletonGrabber<Singleton>::GetGrabber(Args& ...args) {
+	SingletonGrabber tpgrabber_(true, args...);
+	return tpgrabber_;
+}
+
 template <typename Singleton>
 std::unique_ptr<Singleton>& SingletonGrabber<Singleton>::GetInstance()
 {

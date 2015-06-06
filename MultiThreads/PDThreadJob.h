@@ -9,7 +9,7 @@
 //
 
 #pragma once
-#include "AbstractThreadJob.h"
+#include "Threads\AbstractThreadJob.h"
 
 class PDThreadJob : public stl_tp::AbstractThreadJob {
 public:

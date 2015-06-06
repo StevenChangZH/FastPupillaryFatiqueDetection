@@ -58,7 +58,7 @@ void ContinuousController<ThreadJob>::Loop()
 		}
 
 		// Sleep for a few ms
-		Sleep(33);
+		//Sleep(33);
 	}
 }
 
