@@ -1,20 +1,27 @@
+//
+//  PDThreadJob.h
+//  FPFWD Project
+//
+//	Thread job in this project
+//
+//  Created by Steven Chang on 15/6/5.
+//  Copyright (c) 2015 Feathergames. All rights reserved.
+//
+
 #pragma once
-#include "includes.h"
+#include "AbstractThreadJob.h"
 
-// Thread job class, each ThreadController has a ThreadJob and do Task()  
-// method constantly.
-class ThreadJob {
+class PDThreadJob : public stl_tp::AbstractThreadJob {
 public:
-	ThreadJob();
-	ThreadJob(const std::string&);
-	virtual ~ThreadJob();
+	PDThreadJob();
+	PDThreadJob(const std::string& cascadename);
+	virtual ~PDThreadJob();
 
-	// Called before Task() method to exchange data - modify this method
-	// use static_cast to call the real method you want
-	void SynchronizeData(cv::Mat&);
+	// Called before Task() method to exchange data
+	void SynchronizeData(cv::Mat& img_);
 
 	// Task method, used in a tick
-	void Task();
+	virtual void Task();
 
 	template <class FUNC_>
 	// Task method with a function callback
@@ -35,3 +42,4 @@ protected:
 	float CalculateDiameter(float c1, float c2, float c3, float dx);
 };
 
+#include "PDThreadJob.inl"

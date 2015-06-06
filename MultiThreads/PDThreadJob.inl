@@ -1,30 +1,38 @@
-#include "ThreadJob.h"
+//
+//  PDThreadJob.inl
+//  FPFWD Project
+//
+//  Created by Steven Chang on 15/6/5.
+//  Copyright (c) 2015 Feathergames. All rights reserved.
+//
+
+#include "PDThreadJob.h"
 
 // A static const matrix as a kernel
 static const cv::Mat kernel = cv::getGaussianKernel(3, 0.05);
 
 
 
-ThreadJob::ThreadJob():
-	ThreadJob("haarcascade_eye_tree_eyeglasses.xml")
+PDThreadJob::PDThreadJob() :
+PDThreadJob("haarcascade_eye_tree_eyeglasses.xml")
 {}
 
-ThreadJob::ThreadJob(const std::string& cascadename)
+PDThreadJob::PDThreadJob(const std::string& cascadename)
 {
 	// Load the file to construct a cascade classifier
 	cc_cascade.load(cascadename);
 }
 
-ThreadJob::~ThreadJob()
+PDThreadJob::~PDThreadJob()
 {}
 
-void ThreadJob::SynchronizeData(cv::Mat& img_)
+void PDThreadJob::SynchronizeData(cv::Mat& img_)
 {
 	frame_img = img_(cv::Rect(170, 100, 300, 160));
 }
 
 
-void ThreadJob::Task()
+void PDThreadJob::Task()
 {
 	// Get the gray image and perform hist equalization
 	std::vector<cv::Rect> eyeRectVec;
@@ -53,7 +61,7 @@ void ThreadJob::Task()
 		cv::Scalar color = CV_RGB(255, 255, 255);
 		rectangle(frame_img, lefttop, rightdown, color, 1, 8, 0);
 	}
-	
+
 	// Trying to calculate the diameter
 	if (eyeRectVec.size() == 2) {
 		// Perhaps we can process
@@ -75,10 +83,10 @@ void ThreadJob::Task()
 			leftROI.release();
 		}
 	}
-	
+
 	t = (double)cvGetTickCount() - t;
 	double t0 = t / ((double)cvGetTickFrequency()*1000.);
-	// Output
+	// Output - call this will make the std::cout not synchronized
 	std::cout << "Processing time = " << t0 << " ms, avg thread FPS= " <<
 		1000 / t0 << ". eyeRectVec: " << eyeRectVec.size() << std::endl;
 
@@ -91,7 +99,7 @@ void ThreadJob::Task()
 }
 
 
-float ThreadJob::ProcessSingleEye(cv::Mat& eyeROI)
+float PDThreadJob::ProcessSingleEye(cv::Mat& eyeROI)
 {
 	// Preprocessing
 	// Eliminate catchlights
@@ -127,7 +135,7 @@ float ThreadJob::ProcessSingleEye(cv::Mat& eyeROI)
 
 
 
-float ThreadJob::DetectChord(cv::Mat& row, const int& criticalValue)
+float PDThreadJob::DetectChord(cv::Mat& row, const int& criticalValue)
 {
 	// Find the pupillary Chord
 	// Obtain the uchar data of this row
@@ -153,7 +161,7 @@ float ThreadJob::DetectChord(cv::Mat& row, const int& criticalValue)
 	return static_cast<float>(rbit - lbit.base());
 }
 
-float ThreadJob::CalculateDiameter(float c1, float c2, float c3, float dx)
+float PDThreadJob::CalculateDiameter(float c1, float c2, float c3, float dx)
 {
 	// Get the diameter
 	float c1_sqr = c1*c1 / 4;

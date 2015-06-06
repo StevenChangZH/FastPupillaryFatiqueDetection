@@ -1,8 +1,17 @@
-// Operations on cv::Mat
+//
+//  CVEx.h
+//  FPFWD Project
+//
+//	Extend OpenCV algorithms
+//	Operations on cv::Mat
+//
+//  Created by Steven Chang on 15/6/5.
+//  Copyright (c) 2015 Feathergames. All rights reserved.
+//
+
 #pragma once
 #include "includes.h"
 
-// Extend OpenCV algorithms
 namespace cvEx{
 
 	template <typename DataElem_ = uchar, class FUNC_>

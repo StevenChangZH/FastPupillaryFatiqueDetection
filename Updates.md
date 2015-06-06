@@ -46,3 +46,6 @@ Update record file
 
 **Version 1.5.3**
 * Add codes of detecting the diameter to multithreads codes.
+
+**Version 1.6**
+* Reconstruct the thread structure.
