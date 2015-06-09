@@ -48,8 +48,7 @@ void PDThreadPool<NUM_THREADS>::runLoop()
 			// Set the semaphore to trigger the event
 			pController->doJob();
 
-		}
-		catch (const std::bad_exception&) {
+		} catch (const std::bad_exception&) {
 			// do nothing, skip this loop
 		}
 

@@ -17,7 +17,7 @@ namespace cvEx{
 	template <typename DataElem_ = uchar, class FUNC_>
 	// Retrieve data elements for cv::Mat
 	// Default DataElem_ type is uchar
-	// FUNC_: function object FUNC_, e.g.func(uchar&, int&)
+	// FUNC_: function object FUNC_, e.g.func(uchar&, int)
 	// caputure each element and index counter(from 0)
 	inline void mat_foreach(cv::Mat& mat, FUNC_& func_)
 	{
@@ -36,7 +36,7 @@ namespace cvEx{
 	// Using this template to operate on each pixel and return the data
 	// Pixeltype is the set of DataElem_ and must responds to one pixel
 	// Pixeltype must overload the subscripting and assignment operators
-	// FUNC_: function object FUNC_, e.g.func(Pixeltype&, int&)
+	// FUNC_: function object FUNC_, e.g.func(Pixeltype&, int)
 	// caputure each pixel and pixel index counter(from 0)
 	inline std::vector<Pixeltype> vec_mat_foreach(cv::Mat& mat, FUNC_& func_)
 	{
@@ -61,7 +61,7 @@ namespace cvEx{
 /*
 	Samples
 
-	cvEx::mat_foreach
+	cvEx::mat_foreach:
 		cv::Mat mt;
 		std::vector<uchar> dataVecGray;
 		cvEx::mat_foreach( mt, [&dataVecGray](uchar& c, int){

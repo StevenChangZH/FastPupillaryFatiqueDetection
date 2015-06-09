@@ -15,6 +15,7 @@ template <typename TC, size_t NUM_THREADS>
 ContinuousPool<TC, NUM_THREADS>::ContinuousPool()
 {
 	// Initialize the ThreadController
+	m_controllerVec.reserve(NUM_THREADS);
 	for (unsigned int i = 0; i < NUM_THREADS; ++i) {
 		std::unique_ptr<TC> pController(new TC());
 		this->m_controllerVec.push_back(std::move(pController));

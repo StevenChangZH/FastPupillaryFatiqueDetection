@@ -53,3 +53,6 @@ Update record file
 **Version 1.6.1**
 * Add more functionality for SingletonGrabber.
 * Put all threads file into another folder.
+
+**Version 1.6.2**
+* Small adjustments

@@ -16,7 +16,8 @@ QueuePool<ThreadController, ThreadJob, NUM_THREADS>::QueuePool()
 {
 	// Initialize the working queue - for it will be pushed to rest queue
 	// and call Begin()
-	for (unsigned int i = 0; i < NUM_THREADS; ++i) {
+	pController.reserve(NUM_THREADS);
+	for (unsigned i = 0; i < NUM_THREADS; ++i) {
 		std::unique_ptr<ThreadController> pController(new ThreadController());
 		this->m_workingVec.push_back(std::move(pController));
 	}
@@ -51,7 +52,7 @@ size_t QueuePool<ThreadController, ThreadJob, NUM_THREADS>::GetRestThreadNum()
 template <typename ThreadController, typename ThreadJob, size_t NUM_THREADS>
 size_t QueuePool<ThreadController, ThreadJob, NUM_THREADS>::GetThreadNum()
 {
-	return NUM_THREADS+1;
+	return NUM_THREADS + 1;
 }
 
 template <typename ThreadController, typename ThreadJob, size_t NUM_THREADS>
@@ -138,7 +139,7 @@ void QueuePool<ThreadController, ThreadJob, NUM_THREADS>::moveAllToRest()
 	for (auto it = m_workingVec.begin(); it != m_workingVec.end(); ++it) {
 		if (!it->hasJob()) {
 			auto ctrlr = std::make_unique(std::move(*it));
-			m_workingVec.erase(it);
+			it = m_workingVec.erase(it);
 			m_restQueue.push(std::move(ctrlr));
 		}
 	}

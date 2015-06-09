@@ -10,14 +10,14 @@
 #include "SingletonGrabber.h"
 #include "PDThreadPool.h"
 
-// Standards: only using namespace within main.cpp
+// Standard: only using namespace within main.cpp
 using namespace std;
 using namespace cv;
 
 int main(int argc, char* argv[])
 {
 	SingletonGrabber<PDThreadPool<>> grabber;
-	std::unique_ptr<PDThreadPool<>>& pool = grabber.GetInstance();
+	auto& pool = grabber.GetInstance();
 	pool->runLoop();
 	return 0;
 }
