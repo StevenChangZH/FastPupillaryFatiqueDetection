@@ -58,6 +58,7 @@ Update record file
 * Small adjustments
 
 **Version 1.6.3**
-* Redesign the SingletonGrabber clas. Now we can use it with more efficiency.
+* Redesign the SingletonGrabber class. Now we can use it with more efficiency.
 * Add Initialize() method for ThreadPool and ThreadController to initialize member variables while enabling polymorphism. However, that means you have to call it immediately after ctors.
-* Generate data from dections to thread pool.
+* Pass data from ThreadJob to thread pool.
+* Use std::condition_variable to make the thread wait while there is no job. We have about 30% efficiency promotion with this feature.
