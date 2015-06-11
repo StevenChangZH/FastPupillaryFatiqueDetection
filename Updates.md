@@ -56,3 +56,8 @@ Update record file
 
 **Version 1.6.2**
 * Small adjustments
+
+**Version 1.6.3**
+* Redesign the SingletonGrabber clas. Now we can use it with more efficiency.
+* Add Initialize() method for ThreadPool and ThreadController to initialize member variables while enabling polymorphism. However, that means you have to call it immediately after ctors.
+* Generate data from dections to thread pool.

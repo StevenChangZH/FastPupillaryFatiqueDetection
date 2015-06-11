@@ -12,18 +12,22 @@ _NAMESPACE_STL_THREAD_POOL_START_
 
 template <typename ThreadJob>
 ContinuousController<ThreadJob>::ContinuousController()
+{}
+
+template <typename ThreadJob>
+ContinuousController<ThreadJob>::~ContinuousController()
+{
+	m_job = nullptr;
+}
+
+template <typename ThreadJob>
+void ContinuousController<ThreadJob>::Initialize()
 {
 	// Initialize the job
 	m_job = std::make_unique<ThreadJob>();
 
 	// Regitster the Loop() function
 	m_thread = std::thread([this] { this->Loop(); });
-}
-
-template <typename ThreadJob>
-ContinuousController<ThreadJob>::~ContinuousController()
-{
-	m_job = nullptr;
 }
 
 template <typename ThreadJob>
@@ -61,7 +65,6 @@ void ContinuousController<ThreadJob>::Loop()
 		//std::this_thread::sleep_for(std::chrono::milliseconds(33));
 	}
 }
-
 
 
 

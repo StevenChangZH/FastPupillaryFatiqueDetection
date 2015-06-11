@@ -13,7 +13,6 @@ However, please notice:
 
 * Use C++11 standards and IDE is VS2013.
 * And OpenCV version is 2.4.11.
-* windows.h is needed. I will try to remove it to support more platforms.
 * Visual Leak Detector (2.4RC) as memory leak detector.
 
 ## Files
@@ -25,11 +24,12 @@ Codes in this folder is the final version of our project.
 * `includes.h`: include all headers.
 * `nullref.h`: provide nullref realization.
 * `CVEx.h`: extend OpenCV algorithms and used in main.cpp
-* `ThreadController.h/cpp`: controls a thread and its method. Modify your actions within ThreadController::runLoop() method.
-* `ThreadPool.h/cpp`: a thread pool. Also it is a singleton - but not use it directly. Use SingletonGrabber to access the instance.
-* `ThreadJob.h/cpp`: algorithm processing the image and get the diameter.
+* `PDThreadController.h/cpp`: controls a thread and its method. Modify your actions within ThreadController::runLoop() method.
+* `PDThreadPool.h/cpp`: a thread pool. Also it is a singleton - but not use it directly. Use SingletonGrabber to access the instance.
+* `PDThreadJob.h/cpp`: algorithm processing the image and get the diameter.
 * `SingletonGrabber.h`: encapsulate a static singleton instance to realize singleton design pattern.
 * `haarcascade_eye_tree_eyeglasses.xml`: classifier you can find from OpenCV.
+* `/Threads` under this folder there is a suit to use multithreads functionality of C++11 with continuous pool and queued pool.
 
 ### Procedure Folder
 Codes in this folder displays how our algorithms processing an image.

@@ -13,17 +13,7 @@ _NAMESPACE_STL_THREAD_POOL_START_
 
 template <typename TC, size_t NUM_THREADS>
 ContinuousPool<TC, NUM_THREADS>::ContinuousPool()
-{
-	// Initialize the ThreadController
-	m_controllerVec.reserve(NUM_THREADS);
-	for (unsigned int i = 0; i < NUM_THREADS; ++i) {
-		std::unique_ptr<TC> pController(new TC());
-		this->m_controllerVec.push_back(std::move(pController));
-	}
-
-	// Turn on the pool
-	this->Begin();
-}
+{}
 
 template <typename TC, size_t NUM_THREADS>
 ContinuousPool<TC, NUM_THREADS>& ContinuousPool<TC, NUM_THREADS>::operator=
@@ -35,6 +25,21 @@ ContinuousPool<TC, NUM_THREADS>& ContinuousPool<TC, NUM_THREADS>::operator=
 template <typename TC, size_t NUM_THREADS>
 ContinuousPool<TC, NUM_THREADS>::~ContinuousPool()
 {}
+
+template <typename TC, size_t NUM_THREADS>
+void ContinuousPool<TC, NUM_THREADS>::Initialize()
+{
+	// Initialize the ThreadController
+	m_controllerVec.reserve(NUM_THREADS);
+	for (unsigned int i = 0; i < NUM_THREADS; ++i) {
+		auto pController = std::make_unique<TC>();
+		pController->Initialize();
+		this->m_controllerVec.push_back(std::move(pController));
+	}
+
+	// Turn on the pool
+	this->Begin();
+}
 
 template <typename TC, size_t NUM_THREADS>
 void ContinuousPool<TC, NUM_THREADS>::runLoop()

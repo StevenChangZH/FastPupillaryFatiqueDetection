@@ -24,6 +24,9 @@ public:
 	CPool& operator=(const CPool&&) const throw();//_NOEXCEPT
 	virtual ~ContinuousPool();
 
+	// Inintialize all params. Call this function after ctor.
+	virtual void Initialize() override;
+
 	// Run loop method controlling the job assignments
 	virtual void runLoop();
 

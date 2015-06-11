@@ -18,6 +18,9 @@ public:
 	AbstractThreadPool(){}
 	virtual ~AbstractThreadPool(){}
 
+	// Call this to initialize your member variables instead of ctors. 
+	virtual void Initialize() = 0;
+
 	// Run loop method controlling the job assignments - keep it working
 	virtual void runLoop() = 0;
 

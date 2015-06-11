@@ -30,6 +30,9 @@ class QueuePool : protected AbstractThreadPool {
 public:
 	QueuePool();
 	virtual ~QueuePool();
+	
+	// Initialization. Called after ctors.
+	virtual void Initialize() override;
 
 	// Assign Job
 	virtual void AssignJob(const ThreadJob& job_);

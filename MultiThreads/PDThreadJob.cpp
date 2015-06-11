@@ -1,5 +1,5 @@
 //
-//  PDThreadJob.inl
+//  PDThreadJob.cpp
 //  FPFWD Project
 //
 //  Created by Steven Chang on 15/6/5.
@@ -7,28 +7,30 @@
 //
 
 #include "PDThreadJob.h"
+#include "PDThreadPool.h"
 
 // A static const matrix as a kernel
 static const cv::Mat kernel = cv::getGaussianKernel(3, 0.05);
 
-
-
-PDThreadJob::PDThreadJob() :
-PDThreadJob("haarcascade_eye_tree_eyeglasses.xml")
+PDThreadJob::PDThreadJob()
 {}
 
-PDThreadJob::PDThreadJob(const std::string& cascadename)
+PDThreadJob::PDThreadJob(const std::string& cascadename, PDThreadPool* pool_)
 {
 	// Load the file to construct a cascade classifier
 	cc_cascade.load(cascadename);
+	
+	// assign pool ptr
+	this->poolptr = pool_;
 }
 
 PDThreadJob::~PDThreadJob()
 {}
 
-void PDThreadJob::SynchronizeData(cv::Mat& img_)
+void PDThreadJob::SynchronizeData(cv::Mat& img_, std::chrono::system_clock::time_point& tp_)
 {
 	frame_img = img_(cv::Rect(170, 100, 300, 160));
+	timepoint = tp_;
 }
 
 
@@ -41,7 +43,7 @@ void PDThreadJob::Task()
 	equalizeHist(frame_gray, frame_gray);
 
 	// Detect eye && count time
-	double t = (double)cvGetTickCount();
+	long t = static_cast<long>(cvGetTickCount());
 	cc_cascade.detectMultiScale(frame_gray, eyeRectVec,
 		1.1, 2, 0
 		//|CV_HAAR_FIND_BIGGEST_OBJECT
@@ -77,15 +79,15 @@ void PDThreadJob::Task()
 			float diameterL = ProcessSingleEye(leftROI);
 
 			// Return back the result
-			//func_(diameterL, diameterR);
+			poolptr->GetSynchronizedDataFromThread(timepoint, diameterL, diameterR);
 
 			rightROI.release();
 			leftROI.release();
 		}
 	}
 
-	t = (double)cvGetTickCount() - t;
-	double t0 = t / ((double)cvGetTickFrequency()*1000.);
+	t = static_cast<long>(cvGetTickCount()) - t;
+	double t0 = static_cast<double>(t / static_cast<long>((cvGetTickFrequency()*1000.)));
 	// Output - call this will make the std::cout not synchronized
 	std::cout << "Processing time = " << t0 << " ms, avg thread FPS= " <<
 		1000 / t0 << ". eyeRectVec: " << eyeRectVec.size() << std::endl;

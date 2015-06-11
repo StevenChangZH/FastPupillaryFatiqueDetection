@@ -19,6 +19,9 @@ public:
 	QueueController();
 	virtual ~QueueController();
 
+	// Initialization. Called after ctors.
+	virtual void Initialize() override;
+
 	// Begin running - call detach() function
 	// may throw std::runtime_error exception
 	virtual void Begin();

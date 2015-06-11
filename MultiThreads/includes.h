@@ -22,23 +22,28 @@
 #include <memory>
 #include <thread>
 #include <mutex>
+#include <future>
+#include <chrono>
 #include <stdexcept>
 #include <functional>
+#include <utility>
 // STL
 #include <vector>
 #include <queue>
 #include <algorithm>
 
-// Windows headers
-#include <windows.h>
-
 // Memory leak analysis - Visual Leak Detector
-#include <vld.h>
+//#include <vld.h>
 
 // Personal includes
 #include "nullref.h"
 #include "CVEx.h"
 
-// For stl_tp suit
+// For stl_tp suit: under /threads folder
 #define _NAMESPACE_STL_THREAD_POOL_START_ namespace stl_tp{
 #define _NAMESPACE_STL_THREAD_POOL_END_ }
+
+// Templated mutex, used to create a static constant
+template <typename T> struct _TEMPLATED_MUTEX_ {
+	std::mutex _m_mutex;
+};

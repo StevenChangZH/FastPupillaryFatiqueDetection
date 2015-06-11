@@ -23,6 +23,9 @@ public:
 	ContinuousController();
 	virtual ~ContinuousController();
 
+	// Initialization. Call this after ctor.
+	virtual void Initialize() override;
+
 	// Begin running - call detach() function
 	// may throw std::runtime_error exception
 	virtual void Begin();

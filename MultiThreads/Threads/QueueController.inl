@@ -13,16 +13,20 @@ _NAMESPACE_STL_THREAD_POOL_START_
 
 template <typename ThreadJob>
 QueueController<ThreadJob>::QueueController()
+{}
+
+template <typename ThreadJob>
+QueueController<ThreadJob>::~QueueController()
+{}
+
+template <typename THreadJob>
+void QueueController<ThreadJob>::Initialize()
 {
 	m_job = nullptr;
 
 	// Regitster the Loop() function
 	m_thread = std::thread([this] { this->Loop(); });
 }
-
-template <typename ThreadJob>
-QueueController<ThreadJob>::~QueueController()
-{}
 
 template <typename ThreadJob>
 void QueueController<ThreadJob>::Begin()

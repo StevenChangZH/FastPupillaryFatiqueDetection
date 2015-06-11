@@ -16,8 +16,19 @@ using namespace cv;
 
 int main(int argc, char* argv[])
 {
-	SingletonGrabber<PDThreadPool<>> grabber;
-	auto& pool = grabber.GetInstance();
+	auto pair = SingletonGrabber<PDThreadPool>::GetInstance();
+	auto pool = pair.first;
+	pool->Initialize();
 	pool->runLoop();
+	
+	// Display all diameters data
+	std::cout << std::endl << std::endl << "Left eye:" << std::endl;
+	for (auto& diameterL : pool->T_lDiameterVec) {
+		std::cout << diameterL << std::endl;
+	}
+	std::cout << std::endl << std::endl << "Right eye:" << std::endl;
+	for (auto& diameterR : pool->T_lDiameterVec) {
+		std::cout << diameterR << std::endl;
+	}
 	return 0;
 }

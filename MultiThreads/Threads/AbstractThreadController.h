@@ -18,6 +18,9 @@ public:
 	AbstractThreadController(){}
 	virtual ~AbstractThreadController(){}
 
+	// Call this to initialize your member variables instead of ctors. 
+	virtual void Initialize() = 0;
+
 	// Begin running - call detach() function
 	virtual void Begin() = 0;
 	// Run loop method controlling the job assignments - keep it working
