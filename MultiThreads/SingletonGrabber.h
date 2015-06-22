@@ -30,15 +30,15 @@ public:
 	template <typename... Args>
 	// ONLY provided this function to get a shared_ptr to the singleton instance
 	static std::pair<std::shared_ptr<Singleton>, bool> GetInstance(Args&&... args) {
+		
+		std::lock_guard<std::mutex> lock(m_tmutex._m_mutex);
 
 		// If the m_instance has been existed, omit args...
 		bool isInstanceNotExisted = (m_instance == nullptr);
 
-		std::lock_guard<std::mutex> lock(m_tmutex._m_mutex);
 		if (isInstanceNotExisted) {
 			m_instance = std::make_shared<Singleton>(std::forward(args)...);
 		}
-		++m_reference;
 
 		std::shared_ptr<Singleton> returnPtr(m_instance);
 
@@ -54,8 +54,6 @@ private:
 	static std::shared_ptr<Singleton> m_instance;
 	// the mutex
 	static _TEMPLATED_MUTEX_<Singleton> m_tmutex;
-	// the singleton reference (RC)
-	static unsigned m_reference;
 };
 
 template <typename Singleton>
@@ -63,6 +61,3 @@ std::shared_ptr<Singleton> SingletonGrabber<Singleton>::m_instance = nullptr;
 
 template <typename Singleton>
 _TEMPLATED_MUTEX_<Singleton> SingletonGrabber<Singleton>::m_tmutex;
-
-template <typename Singleton>
-unsigned SingletonGrabber<Singleton>::m_reference = 0;

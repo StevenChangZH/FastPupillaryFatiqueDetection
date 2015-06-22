@@ -10,6 +10,7 @@
 
 #pragma once
 #include "Threads\AbstractThreadJob.h"
+#include "Log.h"
 
 class PDThreadPool;
 
@@ -40,8 +41,9 @@ protected:
 	////////////////////// Processing Methods ////////////////////
 
 	inline float ProcessSingleEye(cv::Mat& eyeROI);
-	inline float DetectChord(cv::Mat& row, const int& criticalValue = 18);
-	inline float CalculateDiameter(float c1, float c2, float c3, float dx);
+	inline void DetectChord_Hor(std::vector<uchar>& dataVecGray, cv::Point2i& lPoint,
+		cv::Point2i& rPoint, int criticalValue);
+	inline void DetectChord_Ver(std::vector<uchar>& dataVec, cv::Point2i& lowerPoint, int criticalValue);
 
 	////////////////////// Protected Variables ////////////////////
 

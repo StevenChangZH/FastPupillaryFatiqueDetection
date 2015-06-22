@@ -75,11 +75,19 @@ void PDThreadJob::Task()
 			cv::Mat rightROI = frame_gray(rightRect);
 
 			// Get diameter
+			leftRect.x += leftRect.width/2;
+			leftRect.y += leftRect.height/2;
+			rightRect.x += rightRect.width/2;
+			rightRect.y += rightRect.height/2;
+			float distOfTwoEyes = static_cast<float>(sqrt((rightRect.y - leftRect.y)*
+				(rightRect.y - leftRect.y) + (rightRect.x - leftRect.x)*
+				(rightRect.x - leftRect.x)));
 			float diameterR = ProcessSingleEye(rightROI);
 			float diameterL = ProcessSingleEye(leftROI);
 
 			// Return back the result
-			poolptr->GetSynchronizedDataFromThread(timepoint, diameterL, diameterR);
+			DataLog log(timepoint, diameterL, diameterR, distOfTwoEyes);
+			poolptr->GetSynchronizedDataFromThread(log);
 
 			rightROI.release();
 			leftROI.release();
@@ -90,7 +98,7 @@ void PDThreadJob::Task()
 	double t0 = static_cast<double>(t / static_cast<long>((cvGetTickFrequency()*1000.)));
 	// Output - call this will make the std::cout not synchronized
 	std::cout << "Processing time = " << t0 << " ms, avg thread FPS= " <<
-		1000 / t0 << ". eyeRectVec: " << eyeRectVec.size() << std::endl;
+		1000 / t0 << ". Catch: " << eyeRectVec.size() << std::endl;
 
 
 	// Show img
@@ -109,42 +117,55 @@ float PDThreadJob::ProcessSingleEye(cv::Mat& eyeROI)
 		if (c > 130)c = 20;
 	});
 	morphologyEx(eyeROI, eyeROI, CV_MOP_OPEN, kernel);
-	//imshow("result2", eyeGrayAdjusted);
+	//imshow("result", eyeGrayAdjusted);
 
-	// Chords
-	float chord1, chord2, chord3;
-	// Width of two rows
-	float dx = 3;
 	// Critical of pupilla intensity
 	int criticalValue = 18;
 
 	// Split center lines and get chords
-	if (eyeROI.rows < 4 * dx) return 0;
-	cv::Mat row1(eyeROI.row(static_cast<int>(eyeROI.rows / 2)));
-	chord1 = DetectChord(row1, criticalValue);
-	cv::Mat row2(eyeROI.row(static_cast<int>(eyeROI.rows / 2 + dx)));
-	chord2 = DetectChord(row2, criticalValue);
-	cv::Mat row3(eyeROI.row(static_cast<int>(eyeROI.rows / 2 + dx + dx)));
-	chord3 = DetectChord(row3, criticalValue);
-	// Calculate diamter
-	float diameter = CalculateDiameter(chord1, chord2, chord3, dx);
 
-	row3.release();
-	row2.release();
-	row1.release();
-	return diameter;
+	cv::Point2i lPoint, rPoint;
+	int horLine = static_cast<int>(eyeROI.rows / 2);
+	lPoint.y = horLine;
+	rPoint.y = horLine;
+	cv::Mat row(eyeROI.row(horLine));
+	std::vector<uchar> rowDataVec1;
+	cvEx::mat_foreach(row, [&rowDataVec1](uchar& c, int){
+		rowDataVec1.push_back(c); });
+	DetectChord_Hor(rowDataVec1, lPoint, rPoint, criticalValue);
+	int verLine = static_cast<int>((rPoint.x + lPoint.x) / 2);
+
+	std::vector<uchar> colDataVec1;
+	int eyeGrayAdjustedCols = eyeROI.cols;
+	cvEx::mat_foreach(eyeROI, [&colDataVec1, &verLine, &eyeGrayAdjustedCols]
+		(uchar& c, int num){
+		if (((num + 1) % eyeGrayAdjustedCols) == (verLine%eyeGrayAdjustedCols)) {
+			colDataVec1.push_back(c);
+		}});
+	cv::Point2i lowerPoint(verLine, horLine);
+	DetectChord_Ver(colDataVec1, lowerPoint, criticalValue);
+
+	float temp_a = static_cast<float>(rPoint.x - verLine);
+	float radius = (pow(static_cast<float>(lowerPoint.y - horLine), 2) + pow(temp_a, 2))
+		/ 2 / temp_a;
+	cv::Point2f center((float)verLine, (float)lowerPoint.y - radius);
+	/*
+	cv::circle(eyeROI, center, (int)radius, CV_RGB(255, 255, 255));
+	cv::line(eyeROI, lPoint, rPoint, CV_RGB(255, 255, 255));
+	cv::line(eyeROI, center, lowerPoint, CV_RGB(0, 0, 255));
+	imshow("NewWindow", eyeROI);
+	*/
+
+	row.release();
+	return radius;
 }
 
 
-
-float PDThreadJob::DetectChord(cv::Mat& row, const int& criticalValue)
+void PDThreadJob::DetectChord_Hor(std::vector<uchar>& dataVecGray, cv::Point2i& lPoint,
+	cv::Point2i& rPoint, int criticalValue)
 {
 	// Find the pupillary Chord
 	// Obtain the uchar data of this row
-
-	std::vector<uchar> dataVecGray;
-	cvEx::mat_foreach(row, [&dataVecGray](uchar& c, int){
-		dataVecGray.push_back(c); });
 
 	// initialization
 	auto lit = dataVecGray.rbegin() + static_cast<int>(dataVecGray.size() / 2);
@@ -160,36 +181,24 @@ float PDThreadJob::DetectChord(cv::Mat& row, const int& criticalValue)
 	// Right bounds
 	auto rbit = std::find_if(rit, dataVecGray.end(), bindLogicalOp);
 
-	return static_cast<float>(rbit - lbit.base());
+	lPoint.x = lbit.base() - dataVecGray.begin();
+	rPoint.x = rbit - dataVecGray.begin();
 }
 
-float PDThreadJob::CalculateDiameter(float c1, float c2, float c3, float dx)
+void PDThreadJob::DetectChord_Ver(std::vector<uchar>& colDataVec, cv::Point2i& lowerPoint, int criticalValue)
 {
-	// Get the diameter
-	float c1_sqr = c1*c1 / 4;
-	float c2_sqr = c2*c2 / 4;
-	float c3_sqr = c3*c3 / 4;
-	float deltad = abs(((c1_sqr - c3_sqr) / 4 / dx - dx));
-	//// Difference for delta d
-	//std::cout << abs(c2_sqr * 2 / (c1_sqr - c3_sqr - 2 * dx*dx) / 4 / dx / dx);
-	//std::cout << std::endl;
+	// Find the lower bound of the point
+	// Obtain the uchar data of this col
 
-	// Judge c1>=c3?
-	float diameter = 0;
-	if (c1 >= c3) {
-		// 1,2
-		// Use c2 to adjust the deltad
-		deltad += abs((c2_sqr - c3_sqr) / 2 / dx - dx / 2 - dx);
-		deltad /= 2;
-		diameter = sqrt(c1_sqr + deltad*deltad);
-	}
-	else {
-		// 3,4
-		// Use c2 to adjust the deltad
-		deltad += abs((c2_sqr - c1_sqr) / 2 / dx - dx / 2 - dx);
-		deltad /= 2;
-		diameter = sqrt(c3_sqr + deltad*deltad);
-	}
+	// initialization
+	auto centerIter = colDataVec.begin() + lowerPoint.y;
+	int centerIntensity = static_cast<int>(*centerIter);
+	int lBound = centerIntensity - criticalValue;
+	int uBound = centerIntensity + criticalValue;
+	auto bindLogicalOp = [&lBound, &uBound](uchar& val) {
+		return uBound < val || val < lBound; };
 
-	return diameter + diameter;
+	// Lower bounds
+	auto lowerIter = std::find_if(centerIter, colDataVec.end(), bindLogicalOp);
+	lowerPoint.y = lowerIter - colDataVec.begin();
 }

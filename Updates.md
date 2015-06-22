@@ -62,3 +62,7 @@ Update record file
 * Add Initialize() method for ThreadPool and ThreadController to initialize member variables while enabling polymorphism. However, that means you have to call it immediately after ctors.
 * Pass data from ThreadJob to thread pool.
 * Use std::condition_variable to make the thread wait while there is no job. We have about 30% efficiency promotion with this feature.
+
+**Version 1.6.4**
+* Add a function called `analyze` in the PDThreadPool class.  It will perform interpolations, perform FFT, get the variance and generate PUI. For now only interpolation algorithm lacked.
+* Use a new pupillary diameter detection algorithm.

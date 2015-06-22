@@ -27,10 +27,13 @@
 #include <stdexcept>
 #include <functional>
 #include <utility>
+#include <cmath>
 // STL
 #include <vector>
 #include <queue>
+#include <array>
 #include <algorithm>
+
 
 // Memory leak analysis - Visual Leak Detector
 //#include <vld.h>
@@ -39,6 +42,7 @@
 #include "nullref.h"
 #include "CVEx.h"
 
+#define M_PI 3.141592653524768
 // For stl_tp suit: under /threads folder
 #define _NAMESPACE_STL_THREAD_POOL_START_ namespace stl_tp{
 #define _NAMESPACE_STL_THREAD_POOL_END_ }
