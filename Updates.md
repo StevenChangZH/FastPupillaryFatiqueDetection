@@ -66,3 +66,6 @@ Update record file
 **Version 1.6.4**
 * Add a function called `analyze` in the PDThreadPool class.  It will perform interpolations, perform FFT, get the variance and generate PUI. For now only interpolation algorithm lacked.
 * Use a new pupillary diameter detection algorithm.
+
+**Version 1.6.5**
+* Provide a concise pupilla position and diameter detection method. Really concise.
