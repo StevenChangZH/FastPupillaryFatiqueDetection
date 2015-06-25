@@ -29,7 +29,7 @@ PDThreadJob::~PDThreadJob()
 
 void PDThreadJob::SynchronizeData(cv::Mat& img_, std::chrono::system_clock::time_point& tp_)
 {
-	frame_img = img_(cv::Rect(170, 100, 300, 160));
+	frame_img = img_(cv::Rect(200, 90, 300, 100));
 	timepoint = tp_;
 }
 
@@ -65,33 +65,25 @@ void PDThreadJob::Task()
 	}
 
 	// Trying to calculate the diameter
-	if (eyeRectVec.size() == 2) {
+	if (eyeRectVec.size() != 0) {
 		// Perhaps we can process
-		cv::Rect leftRect = eyeRectVec[0];
-		cv::Rect rightRect = eyeRectVec[1];
-		if (abs(leftRect.x - rightRect.x) >= 50) {
-			// No rect is nested
-			cv::Mat leftROI = frame_gray(leftRect);
-			cv::Mat rightROI = frame_gray(rightRect);
-
-			// Get diameter
-			leftRect.x += leftRect.width/2;
-			leftRect.y += leftRect.height/2;
-			rightRect.x += rightRect.width/2;
-			rightRect.y += rightRect.height/2;
-			float distOfTwoEyes = static_cast<float>(sqrt((rightRect.y - leftRect.y)*
-				(rightRect.y - leftRect.y) + (rightRect.x - leftRect.x)*
-				(rightRect.x - leftRect.x)));
-			float diameterR = ProcessSingleEye(rightROI);
-			float diameterL = ProcessSingleEye(leftROI);
-
-			// Return back the result
-			DataLog log(timepoint, diameterL, diameterR, distOfTwoEyes);
-			poolptr->GetSynchronizedDataFromThread(log);
-
-			rightROI.release();
-			leftROI.release();
+		cv::Rect rightRect;
+		if (eyeRectVec.size() == 2) {
+			rightRect = eyeRectVec[1];
+		} else {
+			rightRect = eyeRectVec[0];
 		}
+
+		cv::Mat rightROI = frame_gray(rightRect);
+		float diameterR = ProcessingSingleEye(rightROI);
+		float diameterL = diameterR;// ProcessingSingleEye(leftROI);
+
+		// Return back the result
+		float distOfTwoEyes = 1.0f;
+		DataLog log(timepoint, diameterL, diameterR, distOfTwoEyes);
+		poolptr->GetSynchronizedDataFromThread(log);
+
+		rightROI.release();
 	}
 
 	t = static_cast<long>(cvGetTickCount()) - t;
@@ -109,96 +101,295 @@ void PDThreadJob::Task()
 }
 
 
-float PDThreadJob::ProcessSingleEye(cv::Mat& eyeROI)
+
+float PDThreadJob::ProcessingSingleEye(cv::Mat& eyeGray)
 {
-	// Preprocessing
-	// Eliminate catchlights
-	cvEx::mat_foreach<uchar>(eyeROI, [](uchar& c, int) {
-		if (c > 130)c = 20;
+	//cv::Mat eyeGray(eyeROI);
+	//cvtColor(eyeROI, eyeGray, CV_BGR2GRAY);
+
+	// 1.1. Discard skins
+	unsigned rows = static_cast<unsigned>(eyeGray.rows);
+	unsigned cols = static_cast<unsigned>(eyeGray.cols);
+	const uchar threshold = 70;
+
+	for (unsigned j = 0; j < cols; ++j) {
+		unsigned i = 0;
+		// Upper
+		for (; i < rows; ++i) {
+			uchar& c = eyeGray.at<uchar>(i, j);
+			if (c < threshold) {
+				break;
+			}
+			else {
+				c = 255;
+			}
+		}
+		// Lower
+		for (unsigned k = rows - 1; k > i; --k)  {
+			uchar& c = eyeGray.at<uchar>(k, j);
+			if (c < threshold) {
+				i = -1;
+			}
+			else {
+				c = 255;
+			}
+		}
+	}
+
+	// 1.2. Assign data and get means
+	std::vector<unsigned> sliceVec(cols, 0);
+	cv::Mat slice = eyeGray.row((unsigned)(rows / 2)).clone();
+	cvEx::mat_foreach<uchar>(eyeGray, [&sliceVec, cols](uchar& c, int i) {
+		if (c != 255) {
+			sliceVec[i % cols] += c;
+		}
 	});
-	morphologyEx(eyeROI, eyeROI, CV_MOP_OPEN, kernel);
-	//imshow("result", eyeGrayAdjusted);
+	
+	uchar maxVal = 0;
+	// 1.3. Equalization - Extend intensity range to 255
+	cvEx::mat_foreach<uchar>(slice, [&sliceVec, &rows, &maxVal](uchar& c, int i) {
+		if (c == 255) { c = 0; }
+		c = c / 2 + static_cast<uchar>(sliceVec[i] / rows / 2);
+		if (c > maxVal) { maxVal = c; }
+	});
+	float eqratio = static_cast<float>(maxVal) / 255.0f;
+	cvEx::mat_foreach<uchar>(slice, [&eqratio](uchar& c, int i) {
+		c = (unsigned)(c / eqratio);
+	});
+	cvEx::mat_foreach<uchar>(slice, [&maxVal, &sliceVec](uchar& c, int i) {
+		if (c > 150) { sliceVec[i] = 0; } //c = 0; }
+		else { sliceVec[i] = c; }
+	});
+	// 1.3. Extract the boundary (x4)
+	// The sequence of the following data is:
+	// lBound -lcBound-pupilla(catchlights)-rcBound-rBound
+	unsigned sec = 20;
+	// Left 
+	unsigned lBound = 0;
+	unsigned lcBound = 0;
+	{
+		auto istart = [&sliceVec]() {
+			auto it = sliceVec.begin();
+			while (!*it){ 
+				++it;
+				if (it == sliceVec.end()){ 
+					return sliceVec.end() - 1; } 
+			} 
+			return it; 
+		}();
+		auto iend = sliceVec.end();
+		unsigned val = *istart;
+		// lBound
+		for (auto it = istart + 1; it != iend; ++it) {
+			unsigned currVal = *it;
+			if (currVal<val - sec || currVal >val + sec) {
+				lBound = it - sliceVec.begin();
+				lcBound = lBound - 1;
+				break;
+			}
+		}
+		// lcBound
+		unsigned sumVal = sliceVec[lBound];
+		unsigned sumnum = 1;
+		unsigned count = 0;
+		if ((sliceVec.begin() + lBound) == sliceVec.end()){ --lBound; }
+		for (auto it = sliceVec.begin() + lBound + 1; it != iend; ++it, ++count) {
+			if (*it == 0) {
+				// Discard this value
+			}
+			else if (*it < static_cast<unsigned>(sumVal / sumnum) && count >3) {
+				lcBound = it - sliceVec.begin() - 1;
+				break;
+			}
+			else {
+				sumVal += *it;
+				++sumnum;
+			}
+		}
+	}
+	// Right
+	unsigned rBound = 0;
+	unsigned rcBound = 0;
+	{
+		auto istart = [&sliceVec]() {
+			auto it = sliceVec.end() - 1;
+			while (!*it){
+				--it;
+				if (it == sliceVec.begin()){
+					return sliceVec.begin() + 1;
+				}
+			}
+			return it;
+		}();
+		unsigned val = *istart;
+		// rBound
+		for (auto it = istart - 1; it != sliceVec.begin(); --it) {
+			unsigned currVal = *it;
+			if (currVal<(val - sec) || currVal >val + sec) {
+				rBound = it - sliceVec.begin();
+				break;
+			}
+		}
+		// rcBound
+		unsigned sumVal = sliceVec[rBound];
+		unsigned sumnum = 1;
+		unsigned count = 0;
+		if (rBound == 0){ rBound = 1; }
+		for (auto it = sliceVec.begin() + rBound - 1; it != sliceVec.begin(); --it, ++count) {
+			if (*it == 0) {
+				// Discard this value
+			} else if (*it < static_cast<unsigned>(sumVal / sumnum) && count >3) {
+				rcBound = it - sliceVec.begin() - 1;
+				break;
+			} else {
+				sumVal += *it;
+				++sumnum;
+			}
+		}
+	}
+	unsigned diameterRoughtp = (rcBound < lcBound+6) ? 7 : (rcBound - lcBound);
+	const unsigned diameterRough = (diameterRoughtp > 20) ? 20 : diameterRoughtp;
+	const unsigned centerCol = (lcBound + rcBound) / 2 + 2;
+	
+	
+	// 2. Match the kernel to find the center of pupilla
+	// 2.1. Construct the kernel (a semi-circle, part of the lower pupil)
+	cv::Mat eyeCanny;
+	cv::Canny(eyeGray, eyeCanny, 55, 120);
+	cv::Mat kernel = constructSemiCircleKernel(diameterRough);
 
-	// Critical of pupilla intensity
-	int criticalValue = 18;
+	// 2.2. Match the kernel and get the centerRow
+	std::vector<unsigned> matchVec;
+	matchVec.reserve(diameterRough);
+	for (unsigned row = (rows - diameterRough) / 2; row < (rows + diameterRough) / 2; ++row) {
+		unsigned val = 0;
+		unsigned r = 0;
+		unsigned c = 0;
+		for (unsigned i = 0; i < (unsigned)kernel.rows; ++i) {
+			for (unsigned j = 0; j < (unsigned)kernel.cols; ++j) {
+				r = (row + i>rows) ? rows - 1 : row + i;
+				c = (centerCol + j>cols) ? cols - 1 : centerCol + j;
+				if (r < rows&&c < cols) {
+					val += (kernel.at<uchar>(i, j)*eyeCanny.at<uchar>(r, c));
+				}
+			}
+		}
+		matchVec.push_back(val);
+	}
+	auto it = std::max_element(matchVec.begin(), matchVec.end(), [](unsigned& _x, unsigned& _y) {
+		return _x < _y;
+	});
+	const unsigned centerRow = it - matchVec.begin() + (rows - diameterRough) / 2 + 2;
 
-	// Split center lines and get chords
+	
+	// Now we we've got a more concise position of the center.
+	// 3. Calculate the diameter
+	float diameter = 0.0f;
+	try{
+		// 3.1. Generate means of semicircles with different diameters
+		kernel = constructSemiCircleKernel(diameterRough);
+		unsigned numberOfJudge = (kernel.cols / 5 > 2) ? 5 : 3;
+		std::vector<unsigned> circleSumVec(numberOfJudge, 0);
+		std::vector<unsigned> circleCountVec(numberOfJudge, 0);
+		std::vector<unsigned> circleBoundVec(kernel.cols, 0);
+		unsigned kernelCols = kernel.cols;
+		for (unsigned i = 0; i < (unsigned)kernel.rows; ++i) {
+			for (unsigned j = 0; j < (unsigned)kernel.cols; ++j) {
+				uchar c = kernel.at<uchar>(i, j);
+				if (circleBoundVec[j] == 0 && c == 1) {
+					circleBoundVec[j] = i;
+				}
+			}
+		}/*
+		cvEx::mat_foreach<uchar>(kernel, [&circleBoundVec, &kernelCols](uchar& c, int i) {
+			if (circleBoundVec[i%kernelCols] == 0 && c == 1) {
+				circleBoundVec[i%kernelCols] = i / kernelCols;
+			}
+		});*/
+		unsigned eyeSemiCircleRow = min((unsigned)(centerRow + kernel.rows), (unsigned)(eyeGray.rows - 1));
+		unsigned eyeSemiCircleCols = (unsigned)max(0, (int)(centerCol - kernel.cols / 2));
+		unsigned eyeSemiCircleCole = (unsigned)min((unsigned)eyeGray.cols-1, (unsigned)centerCol + kernel.cols / 2);
+		// FORCE to return
+		if ((int)eyeSemiCircleCols>=eyeGray.cols || eyeSemiCircleCols >= eyeSemiCircleCole
+			|| centerRow >= eyeSemiCircleRow){
+			return 0.0f;
+		}
+		//std::cout << eyeSemiCircleCols << std::endl << eyeSemiCircleCole << std::endl; 
+		cv::Mat eyeSemiCircle = eyeGray.rowRange(centerRow, eyeSemiCircleRow)
+			.colRange(eyeSemiCircleCols, eyeSemiCircleCole);
+		for (unsigned k = 0; k < numberOfJudge; ++k) {
+			unsigned circleSum = 0;
+			unsigned circleCount = 0;
+			for (unsigned j = 0; j < (unsigned)eyeSemiCircle.cols; ++j) {
+				for (unsigned i = 0; i < (unsigned)eyeSemiCircle.rows; ++i) {
+					if (i < circleBoundVec[j] + k) {
+						uchar val = eyeSemiCircle.at<uchar>(i, j);
+						if (val != 0) {
+							circleSum += val;
+							++circleCount;
+						}
+					}
+					else {
+						i = (unsigned)eyeSemiCircle.rows;
+					}
+				}
+			}
+			circleSumVec[k] = circleSum;
+			circleCountVec[k] = circleCount;
+		}
+		// Get the means
+		std::vector<float> circleMeanVec(numberOfJudge, 0.0f);
+		for (unsigned i = 0; i < numberOfJudge; ++i) {
+			circleMeanVec[i] = static_cast<float>((float)circleSumVec[i] /
+				(float)circleCountVec[i]);
+		}
+		
+		// 3.2. Generate the diameter using former data
+		if (numberOfJudge == 5) {
+			auto it = circleMeanVec.begin();
+			float alpha1 = *(it + 4) + *it - *(it + 3) - *(it + 1);
+			float alpha2 = *(it + 3) + *(it + 1) - (*(it + 2)) * 2;
+			diameter = (float)diameterRough / 2 + (alpha1 * 952 / 1205 + alpha2 * 253 / 1205)
+				/ (alpha1 + alpha2);
+		}
+		else if (numberOfJudge == 3) {
+			auto it = circleMeanVec.begin();
+			float alpha = *(it + 2) + *it - 2 * (*(it + 1));
+			diameter = (float)diameterRough / 2 + 2 * alpha / ((float)*(it + 2) - *it) + 2;
+		}
+	} catch (const std::exception& e){
+		std::cerr << e.what() << std::endl;
+		throw;
+	}
+	
 
-	cv::Point2i lPoint, rPoint;
-	int horLine = static_cast<int>(eyeROI.rows / 2);
-	lPoint.y = horLine;
-	rPoint.y = horLine;
-	cv::Mat row(eyeROI.row(horLine));
-	std::vector<uchar> rowDataVec1;
-	cvEx::mat_foreach(row, [&rowDataVec1](uchar& c, int){
-		rowDataVec1.push_back(c); });
-	DetectChord_Hor(rowDataVec1, lPoint, rPoint, criticalValue);
-	int verLine = static_cast<int>((rPoint.x + lPoint.x) / 2);
-
-	std::vector<uchar> colDataVec1;
-	int eyeGrayAdjustedCols = eyeROI.cols;
-	cvEx::mat_foreach(eyeROI, [&colDataVec1, &verLine, &eyeGrayAdjustedCols]
-		(uchar& c, int num){
-		if (((num + 1) % eyeGrayAdjustedCols) == (verLine%eyeGrayAdjustedCols)) {
-			colDataVec1.push_back(c);
-		}});
-	cv::Point2i lowerPoint(verLine, horLine);
-	DetectChord_Ver(colDataVec1, lowerPoint, criticalValue);
-
-	float temp_a = static_cast<float>(rPoint.x - verLine);
-	float radius = (pow(static_cast<float>(lowerPoint.y - horLine), 2) + pow(temp_a, 2))
-		/ 2 / temp_a;
-	cv::Point2f center((float)verLine, (float)lowerPoint.y - radius);
-	/*
-	cv::circle(eyeROI, center, (int)radius, CV_RGB(255, 255, 255));
-	cv::line(eyeROI, lPoint, rPoint, CV_RGB(255, 255, 255));
-	cv::line(eyeROI, center, lowerPoint, CV_RGB(0, 0, 255));
-	imshow("NewWindow", eyeROI);
-	*/
-
-	row.release();
-	return radius;
+	kernel.release();
+	eyeCanny.release();
+	slice.release();
+	return 10.0f;
 }
 
-
-void PDThreadJob::DetectChord_Hor(std::vector<uchar>& dataVecGray, cv::Point2i& lPoint,
-	cv::Point2i& rPoint, int criticalValue)
-{
-	// Find the pupillary Chord
-	// Obtain the uchar data of this row
-
-	// initialization
-	auto lit = dataVecGray.rbegin() + static_cast<int>(dataVecGray.size() / 2);
-	auto rit = lit.base();
-	int centerIntensity = static_cast<int>(*lit);
-	int lBound = centerIntensity - criticalValue;
-	int uBound = centerIntensity + criticalValue;
-	auto bindLogicalOp = [&lBound, &uBound](uchar& val) {
-		return uBound < val || val < lBound; };
-
-	// Left bounds
-	auto lbit = std::find_if(lit, dataVecGray.rend(), bindLogicalOp);
-	// Right bounds
-	auto rbit = std::find_if(rit, dataVecGray.end(), bindLogicalOp);
-
-	lPoint.x = lbit.base() - dataVecGray.begin();
-	rPoint.x = rbit - dataVecGray.begin();
-}
-
-void PDThreadJob::DetectChord_Ver(std::vector<uchar>& colDataVec, cv::Point2i& lowerPoint, int criticalValue)
-{
-	// Find the lower bound of the point
-	// Obtain the uchar data of this col
-
-	// initialization
-	auto centerIter = colDataVec.begin() + lowerPoint.y;
-	int centerIntensity = static_cast<int>(*centerIter);
-	int lBound = centerIntensity - criticalValue;
-	int uBound = centerIntensity + criticalValue;
-	auto bindLogicalOp = [&lBound, &uBound](uchar& val) {
-		return uBound < val || val < lBound; };
-
-	// Lower bounds
-	auto lowerIter = std::find_if(centerIter, colDataVec.end(), bindLogicalOp);
-	lowerPoint.y = lowerIter - colDataVec.begin();
+cv::Mat PDThreadJob::constructSemiCircleKernel(unsigned width)
+try{
+	// The kernel is a ((width)*0.7, width) matrix.
+	unsigned cols = width;
+	unsigned rows = static_cast<unsigned>(width*0.8);
+	cv::Mat kernel(rows, cols, CV_8U, cv::Scalar(0));
+	for (unsigned i = 0; i < cols / 2; ++i) {
+		unsigned j = static_cast<unsigned>(sqrt((float)i*(cols - i)));
+		j = (j>rows / 2 - 1) ? (unsigned)(rows / 2 - 1) : j;
+		j = (j < 0) ? 0 : j;
+		kernel.at<uchar>(cols / 2 - i, cols / 2 + j) = 1;
+		kernel.at<uchar>(cols / 2 - i, cols / 2 - j - 1) = 1;
+	}
+	for (unsigned j = 0; j < cols; ++j) {
+		unsigned i = static_cast<unsigned>(sqrt((float)j*(cols - 1 - j)));
+		i = (i>rows *0.7 / 2 - 1) ? (unsigned)(rows*0.7 / 2 - 1) : i;
+		i = (i < 0) ? 0 : i;
+		kernel.at<uchar>(i, j) = 1;
+	}
+	return kernel.rowRange(rows / 8, rows - 1).clone();
+} catch(const std::exception& e) {
+		std::cerr << e.what() << std::endl; 
+		throw;
 }

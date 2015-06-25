@@ -20,6 +20,6 @@ int main(int argc, char* argv[])
 	auto pool = pair.first;
 	pool->Initialize();
 	pool->runLoop();
-	//pool->analyze();
+	pool->analyze();
 	return 0;
 }

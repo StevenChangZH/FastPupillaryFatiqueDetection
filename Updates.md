@@ -69,3 +69,8 @@ Update record file
 
 **Version 1.6.5**
 * Provide a concise pupilla position and diameter detection method. Really concise.
+
+**Version 1.7**
+* Add interpolation functions and make more adjustments.
+* Final version of the course but not quite complete. The calculation of PUI need to adjust.
+* Use the video but not camera to display.

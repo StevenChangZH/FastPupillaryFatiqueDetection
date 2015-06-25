@@ -38,12 +38,10 @@ protected:
 	// Cascade classifier
 	cv::CascadeClassifier cc_cascade;
 
-	////////////////////// Processing Methods ////////////////////
+	////////////////////// OpenCV Processing Methods ////////////////////
 
-	inline float ProcessSingleEye(cv::Mat& eyeROI);
-	inline void DetectChord_Hor(std::vector<uchar>& dataVecGray, cv::Point2i& lPoint,
-		cv::Point2i& rPoint, int criticalValue);
-	inline void DetectChord_Ver(std::vector<uchar>& dataVec, cv::Point2i& lowerPoint, int criticalValue);
+	cv::Mat constructSemiCircleKernel(unsigned width);
+	float ProcessingSingleEye(cv::Mat& eyeROI);
 
 	////////////////////// Protected Variables ////////////////////
 

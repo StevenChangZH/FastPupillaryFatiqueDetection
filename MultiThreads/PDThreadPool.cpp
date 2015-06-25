@@ -10,7 +10,12 @@
 
 // Data set size 
 const unsigned dataSize = 1200;
+// Get only points distributed in center
 const unsigned resultSize = 1000;
+// IN the final data processing, the time stride of one tick we set to perform interpolation
+const unsigned tickTimeStride = 25;
+// The standard diameter variance after FFT performed
+const float stdVariance = 2500;
 
 PDThreadPool::PDThreadPool()
 {}
@@ -33,12 +38,12 @@ void PDThreadPool::Initialize()
 }
 
 void PDThreadPool::runLoop()
-{
+try {
 	int pressedKey = 0;// used to record keyboard event
 
 	// Initialize capture struct
-	cv::VideoCapture imageCapture(0);//camera 
-	//cv::VideoCapture imageCapture("");// Open sample video
+	//cv::VideoCapture imageCapture(0);//camera 
+	cv::VideoCapture imageCapture("c:\\software\\Giveaway.mp4");// Open sample video
 	if (!imageCapture.isOpened()) {
 		std::cerr << "[ERROR] Error occurred when trying to open the video file." << std::endl;
 		return;
@@ -51,7 +56,7 @@ void PDThreadPool::runLoop()
 	cvNamedWindow("result", 1);
 
 	// If 'q' pressed terminated
-	while (pressedKey != 'q') {
+	while (pressedKey != 'q' && m_logVec.size()<=dataSize) {
 
 		try {
 			std::unique_ptr<PDThreadController>& pController = this->nextController();
@@ -69,7 +74,7 @@ void PDThreadPool::runLoop()
 			// do nothing, skip this loop
 		}
 
-		pressedKey = cvWaitKey(16);
+		pressedKey = cvWaitKey(33);
 	}
 
 	// Terminate all
@@ -80,6 +85,9 @@ void PDThreadPool::runLoop()
 	// Release the memory
 	m_image.release();
 	cvDestroyAllWindows();
+} catch (const std::exception& e) {
+	std::cerr << e.what() << std::endl;
+	throw;
 }
 
 void PDThreadPool::GetSynchronizedDataFromThread(DataLog& log_)
@@ -101,9 +109,50 @@ void PDThreadPool::analyze()
 	long t = static_cast<long>(cvGetTickCount());
 
 	// First, interpolations and adjustments.
-	std::array<float, dataSize> dataArrayL;
-	std::array<float, dataSize> dataArrayR;
 
+	unsigned logNumber = m_logVec.size();
+	logNumber = (logNumber > dataSize) ? dataSize : logNumber;
+	std::array<float, dataSize> dataArrayL;
+	dataArrayL.fill(0.0f);
+	std::array<float, dataSize> dataArrayR;
+	dataArrayR.fill(0.0f);
+	// 1.1 step one: quantification.
+	auto logIt = m_logVec.begin();
+	auto startTime = logIt->timepoint;
+	for (++logIt; logIt != m_logVec.end(); ++logIt) {
+		auto duration = logIt->timepoint - startTime;
+		unsigned durationtime = static_cast<unsigned>(std::chrono::duration_cast
+			<std::chrono::milliseconds>(duration).count());
+		unsigned index = static_cast<unsigned>(durationtime / tickTimeStride);
+		index = (index < dataSize) ? index : dataSize - 1;
+		//dataArrayL[index] = logIt->diameterL;
+		dataArrayR[index] = logIt->diameterR;
+	}
+	// 1.2 Step two: linear interpolation
+
+	// Define a function used to perform interpolation. 
+	auto interpolate = [](std::array<float, dataSize>& dataArray) {
+		
+		auto istart = dataArray.begin() + 1;
+		auto iend = dataArray.end() - 1;
+		for (auto it = istart; it != iend; ++it) {
+			if (*it == 0.0f) {
+				auto lit = it - 1;
+				float sections = 1.0f;
+				for (; (*it != 0.0f && it != iend); ++sections, ++it) {}
+				auto rit = it;
+				// Linear interpolation
+				float stride = (*rit - *lit) / sections;
+				float value = *lit + stride;
+				for (auto iter = lit + 1; iter != rit; ++iter) {
+					*iter = value;
+					value += stride;
+				}
+			}
+		}
+	};
+	//interpolate(dataArrayL);
+	interpolate(dataArrayR);
 
 
 	// Second, FFT.
@@ -133,11 +182,11 @@ void PDThreadPool::analyze()
 		return dst;
 	};
 
-	std::array<float, resultSize> fftArrayL = dftDim1(dataArrayL);
+	//std::array<float, resultSize> fftArrayL = dftDim1(dataArrayL);
 	std::array<float, resultSize> fftArrayR = dftDim1(dataArrayR);
 
 	// Third, the variance.
-	auto getVariance = [](const std::array<float, resultSize> fftArray) {
+	auto getVariance = [](const std::array<float, resultSize>& fftArray) {
 		
 		// Based on formula: Variance = E(x^2) - (Ex)^2
 		float E_xsquared = 0.0f;// E(x^2)
@@ -152,17 +201,13 @@ void PDThreadPool::analyze()
 		return E_xsquared - Ex_squared;
 	};
 	
-	float varianceL = getVariance(fftArrayL);
+	//float varianceL = getVariance(fftArrayL);
 	float varianceR = getVariance(fftArrayR);
 
-	// Evaluations of the quantifiable fatique value - PUI
-
-	// This data is used as a standard
-	const float std = 20.0f;
-
-	float PUI = 1 - (((varianceL + varianceR) / 2 - std) /
-		max(abs(varianceL - std), abs(varianceR - std)));
-	std::cout << "The PUI value detected is:" << PUI << std::endl;
+	// Finally, evaluations of the quantifiable fatique value - PUI
+	// Also known as Pupillary Unrest Index.
+	float PUI = ((varianceR - stdVariance) / max(varianceR, stdVariance));
+	std::cout << "The PUI value detected is:" << PUI * 100 << "%"<< std::endl;
 	t = static_cast<long>(cvGetTickCount()) - t;
 	double t0 = static_cast<double>(t / static_cast<long>((cvGetTickFrequency()*1000.)));
 	std::cout << "[STATE] Process completed. Total analysis time: " << t0 << " ms." << std::endl;

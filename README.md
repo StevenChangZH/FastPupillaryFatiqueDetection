@@ -1,5 +1,5 @@
 # Fast Pupillary Fatique Waves Detection
-Real-time pupillary fatique wave detection using OpenCV &amp; C++. This is our Computer Vision course project. **NOTICE: project uncompleted for now**
+Real-time pupillary fatique wave detection using OpenCV &amp; C++. This is our Computer Vision course project. 
 
 ## What is it?
 We use it to detect your pupillary diameter waves. Spontaneous waves of pupillary size and tiredness of human body are correlated. (`LOWENSTEIN O,FEINBERG R,LOEWENFELD I E. Pupillary movements during acute and chronic fatigue[J].Invest Ophthalmol Vis Sci,1963,2(2):138-157.`  )
@@ -18,7 +18,7 @@ Development tools:
 ## Files
 
 ### Multithreads Folder
-Codes in this folder is the final version of our project.
+Codes in this folder is the final version of our project. Video we use is [this](https://www.youtube.com/watch?v=NAFcwYlscsc).
 
 * `main.cpp`: program entrance.
 * `includes.h`: include all headers.
@@ -36,7 +36,7 @@ Codes in this folder is the final version of our project.
 Codes in this folder displays how our algorithms processing an image.
 **Notice: Codes in this folder will not need explicit IDE. Only OpenCV environemnt needed.**
 
-* `main.cpp`: program entrance and processing this [image](http://www.nipic.com/show/1/11/fe8b096e1238b796.html).
+* `main.cpp`: program entrance and processing the image from the video.
 * `includes.h`: include all headers.
 * `CVEx.h`: extend OpenCV algorithms and used in main.cpp
 * `haarcascade_eye_tree_eyeglasses.xml`: classifier you can find from OpenCV.

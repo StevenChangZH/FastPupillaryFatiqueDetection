@@ -14,7 +14,7 @@ int main(int argc, const char* argv[])
 	// Get the gray image and perform hist equalization
 	std::vector<cv::Rect> eyeRectVec;
 	//cv::Mat frame_img = cvLoadImage( "C:\\software\\frontface.png" );
-	cv::Mat frame_img = cvLoadImage("C:\\software\\test2.png");
+	cv::Mat frame_img = cvLoadImage("C:\\software\\test.png");
 	cv::Mat frame_gray = cv::Mat( frame_img );
 	cvtColor( frame_gray, frame_gray, CV_BGR2GRAY );
 	equalizeHist( frame_gray, frame_gray );
@@ -109,10 +109,10 @@ int main(int argc, const char* argv[])
 	return 0;
 }
 
-float ProcessingSingleEye(cv::Mat& eyeROI)
+float ProcessingSingleEye(cv::Mat& eyeGray)
 {
-	cv::Mat eyeGray;
-	cvtColor(eyeROI, eyeGray, CV_BGR2GRAY);
+	//cv::Mat eyeGray(eyeROI);
+	//cvtColor(eyeROI, eyeGray, CV_BGR2GRAY);
 
 	// 1.1. Discard skins
 	unsigned rows = static_cast<unsigned>(eyeGray.rows);
@@ -151,6 +151,7 @@ float ProcessingSingleEye(cv::Mat& eyeROI)
 			sliceVec[i % cols] += c;
 		}
 	});
+
 	uchar maxVal = 0;
 	// 1.3. Equalization - Extend intensity range to 255
 	cvEx::mat_foreach<uchar>(slice, [&sliceVec, &rows, &maxVal](uchar& c, int i) {
@@ -169,12 +170,21 @@ float ProcessingSingleEye(cv::Mat& eyeROI)
 	// 1.3. Extract the boundary (x4)
 	// The sequence of the following data is:
 	// lBound -lcBound-pupilla(catchlights)-rcBound-rBound
-	int sec = 20;
+	unsigned sec = 20;
 	// Left 
-	unsigned lBound = sliceVec.size();
+	unsigned lBound = 0;
 	unsigned lcBound = 0;
 	{
-		auto istart = [&sliceVec](){auto it = sliceVec.begin(); while (!*it){ ++it; } return it; }();
+		auto istart = [&sliceVec]() {
+			auto it = sliceVec.begin();
+			while (!*it){
+				++it;
+				if (it == sliceVec.end()){
+					return sliceVec.end() - 1;
+				}
+			}
+			return it;
+		}();
 		auto iend = sliceVec.end();
 		unsigned val = *istart;
 		// lBound
@@ -190,6 +200,7 @@ float ProcessingSingleEye(cv::Mat& eyeROI)
 		unsigned sumVal = sliceVec[lBound];
 		unsigned sumnum = 1;
 		unsigned count = 0;
+		if ((sliceVec.begin() + lBound) == sliceVec.end()){ --lBound; }
 		for (auto it = sliceVec.begin() + lBound + 1; it != iend; ++it, ++count) {
 			if (*it == 0) {
 				// Discard this value
@@ -208,12 +219,21 @@ float ProcessingSingleEye(cv::Mat& eyeROI)
 	unsigned rBound = 0;
 	unsigned rcBound = 0;
 	{
-		auto istart = [&sliceVec](){auto it = sliceVec.end() - 1; while (!*it){ --it; } return it; }();
+		auto istart = [&sliceVec]() {
+			auto it = sliceVec.end() - 1;
+			while (!*it){
+				--it;
+				if (it == sliceVec.begin()){
+					return sliceVec.begin() + 1;
+				}
+			}
+			return it;
+		}();
 		unsigned val = *istart;
 		// rBound
 		for (auto it = istart - 1; it != sliceVec.begin(); --it) {
 			unsigned currVal = *it;
-			if ((int)currVal<(int)(val - sec) || currVal >val + sec) {
+			if (currVal<(val - sec) || currVal >val + sec) {
 				rBound = it - sliceVec.begin();
 				break;
 			}
@@ -222,6 +242,7 @@ float ProcessingSingleEye(cv::Mat& eyeROI)
 		unsigned sumVal = sliceVec[rBound];
 		unsigned sumnum = 1;
 		unsigned count = 0;
+		if (rBound == 0){ rBound = 1; }
 		for (auto it = sliceVec.begin() + rBound - 1; it != sliceVec.begin(); --it, ++count) {
 			if (*it == 0) {
 				// Discard this value
@@ -236,7 +257,8 @@ float ProcessingSingleEye(cv::Mat& eyeROI)
 			}
 		}
 	}
-	unsigned diameterRough = rcBound - lcBound;
+	unsigned diameterRoughtp = (rcBound < lcBound + 6) ? 7 : (rcBound - lcBound);
+	const unsigned diameterRough = (diameterRoughtp > 20) ? 20 : diameterRoughtp;
 	const unsigned centerCol = (lcBound + rcBound) / 2 + 2;
 
 
@@ -255,15 +277,10 @@ float ProcessingSingleEye(cv::Mat& eyeROI)
 		unsigned c = 0;
 		for (unsigned i = 0; i < (unsigned)kernel.rows; ++i) {
 			for (unsigned j = 0; j < (unsigned)kernel.cols; ++j) {
-				r = row + i;
-				c = centerCol + j;
+				r = (row + i>rows) ? rows - 1 : row + i;
+				c = (centerCol + j>cols) ? cols - 1 : centerCol + j;
 				if (r < rows&&c < cols) {
-					unsigned kernelVal = kernel.at<uchar>(i, j);
-					unsigned cannyVal = eyeCanny.at<uchar>(r, c);
-					//val += (kernelVal*cannyVal);
-					if (kernelVal && cannyVal) {
-						val += (kernelVal*cannyVal);
-					}
+					val += (kernel.at<uchar>(i, j)*eyeCanny.at<uchar>(r, c));
 				}
 			}
 		}
@@ -278,20 +295,38 @@ float ProcessingSingleEye(cv::Mat& eyeROI)
 	// Now we we've got a more concise position of the center.
 	// 3. Calculate the diameter
 	float diameter = 0.0f;
-	{
+	try{
 		// 3.1. Generate means of semicircles with different diameters
+		kernel = constructSemiCircleKernel(diameterRough);
 		unsigned numberOfJudge = (kernel.cols / 5 > 2) ? 5 : 3;
 		std::vector<unsigned> circleSumVec(numberOfJudge, 0);
 		std::vector<unsigned> circleCountVec(numberOfJudge, 0);
 		std::vector<unsigned> circleBoundVec(kernel.cols, 0);
 		unsigned kernelCols = kernel.cols;
-		cvEx::mat_foreach<uchar>(kernel, [&circleBoundVec, &kernelCols](uchar& c, int i) {
-			if (circleBoundVec[i%kernelCols] == 0 && c == 1) {
-				circleBoundVec[i%kernelCols] = i / kernelCols;
+		for (unsigned i = 0; i < (unsigned)kernel.rows; ++i) {
+			for (unsigned j = 0; j < (unsigned)kernel.cols; ++j) {
+				uchar c = kernel.at<uchar>(i, j);
+				if (circleBoundVec[j] == 0 && c == 1) {
+					circleBoundVec[j] = i;
+				}
 			}
-		});
-		cv::Mat eyeSemiCircle = eyeGray.rowRange(centerRow, min(centerRow + kernel.rows, eyeGray.rows - 1))
-			.colRange(centerCol - kernel.cols / 2, centerCol + kernel.cols / 2);
+		}/*
+		 cvEx::mat_foreach<uchar>(kernel, [&circleBoundVec, &kernelCols](uchar& c, int i) {
+		 if (circleBoundVec[i%kernelCols] == 0 && c == 1) {
+		 circleBoundVec[i%kernelCols] = i / kernelCols;
+		 }
+		 });*/
+		unsigned eyeSemiCircleRow = min((unsigned)(centerRow + kernel.rows), (unsigned)(eyeGray.rows - 1));
+		unsigned eyeSemiCircleCols = (unsigned)max(0, (int)(centerCol - kernel.cols / 2));
+		unsigned eyeSemiCircleCole = (unsigned)min((unsigned)eyeGray.cols - 1, (unsigned)centerCol + kernel.cols / 2);
+		// FORCE to return
+		if ((int)eyeSemiCircleCols >= eyeGray.cols || eyeSemiCircleCols >= eyeSemiCircleCole
+			|| centerRow >= eyeSemiCircleRow){
+			return 0.0f;
+		}
+		//std::cout << eyeSemiCircleCols << std::endl << eyeSemiCircleCole << std::endl; 
+		cv::Mat eyeSemiCircle = eyeGray.rowRange(centerRow, eyeSemiCircleRow)
+			.colRange(eyeSemiCircleCols, eyeSemiCircleCole);
 		for (unsigned k = 0; k < numberOfJudge; ++k) {
 			unsigned circleSum = 0;
 			unsigned circleCount = 0;
@@ -333,43 +368,40 @@ float ProcessingSingleEye(cv::Mat& eyeROI)
 			diameter = (float)diameterRough / 2 + 2 * alpha / ((float)*(it + 2) - *it) + 2;
 		}
 	}
+	catch (const std::exception& e){
+		std::cerr << e.what() << std::endl;
+		throw;
+	}
 
-	/*
-	// Display and release
-	cv::line(eyeROI, cv::Point(0, centerRow), cv::Point(eyeCanny.cols - 1, centerRow), CV_RGB(255, 255, 255));
-	cv::line(eyeROI, cv::Point(centerCol, 0), cv::Point(centerCol, eyeCanny.rows - 1), CV_RGB(255, 255, 255));
-	cv::line(eyeCanny, cv::Point(0, 6), cv::Point(eyeCanny.cols - 1, 6), CV_RGB(255, 255, 255));
-	cv::line(eyeCanny, cv::Point(0, centerRow), cv::Point(eyeCanny.cols - 1, centerRow), CV_RGB(255, 255, 255));
-	cv::line(eyeCanny, cv::Point(centerCol, 0), cv::Point(centerCol, eyeCanny.rows - 1), CV_RGB(255, 255, 255));
-	cv::circle(eyeROI, cv::Point(centerCol, centerRow), diameter, CV_RGB(255, 255, 255));
 
-	cvEx::mat_foreach<uchar>(kernel, [](uchar& c, int) {
-	c = c * 255;
-	});
-	imshow("kernel", kernel);
-	imshow("eyeROI", eyeROI);
-	imshow("eyeCanny", eyeCanny);*/
 	kernel.release();
 	eyeCanny.release();
 	slice.release();
-	eyeGray.release();
-	return diameter;
+	return 10.0f;
 }
 
 cv::Mat constructSemiCircleKernel(unsigned width)
-{
+try{
 	// The kernel is a ((width)*0.7, width) matrix.
 	unsigned cols = width;
 	unsigned rows = static_cast<unsigned>(width*0.8);
 	cv::Mat kernel(rows, cols, CV_8U, cv::Scalar(0));
 	for (unsigned i = 0; i < cols / 2; ++i) {
 		unsigned j = static_cast<unsigned>(sqrt((float)i*(cols - i)));
-		kernel.at<uchar>(cols / 2 - i - 1, cols / 2 + j) = 1;
-		kernel.at<uchar>(cols / 2 - i - 1, cols / 2 - j - 1) = 1;
+		j = (j>rows / 2 - 1) ? (unsigned)(rows / 2 - 1) : j;
+		j = (j < 0) ? 0 : j;
+		kernel.at<uchar>(cols / 2 - i, cols / 2 + j) = 1;
+		kernel.at<uchar>(cols / 2 - i, cols / 2 - j - 1) = 1;
 	}
 	for (unsigned j = 0; j < cols; ++j) {
 		unsigned i = static_cast<unsigned>(sqrt((float)j*(cols - 1 - j)));
+		i = (i>rows *0.7 / 2 - 1) ? (unsigned)(rows*0.7 / 2 - 1) : i;
+		i = (i < 0) ? 0 : i;
 		kernel.at<uchar>(i, j) = 1;
 	}
 	return kernel.rowRange(rows / 8, rows - 1).clone();
+}
+catch (const std::exception& e) {
+	std::cerr << e.what() << std::endl;
+	throw;
 }
