@@ -15,13 +15,10 @@ static const cv::Mat kernel = cv::getGaussianKernel(3, 0.05);
 PDThreadJob::PDThreadJob()
 {}
 
-PDThreadJob::PDThreadJob(const std::string& cascadename, PDThreadPool* pool_)
+PDThreadJob::PDThreadJob(const std::string& cascadename)
 {
 	// Load the file to construct a cascade classifier
 	cc_cascade.load(cascadename);
-	
-	// assign pool ptr
-	this->poolptr = pool_;
 }
 
 PDThreadJob::~PDThreadJob()
@@ -81,7 +78,7 @@ void PDThreadJob::Task()
 		// Return back the result
 		float distOfTwoEyes = 1.0f;
 		DataLog log(timepoint, diameterL, diameterR, distOfTwoEyes);
-		poolptr->GetSynchronizedDataFromThread(log);
+		SingletonGrabber<PDThreadPool>::GetInstance().first->GetSynchronizedDataFromThread(log);
 
 		rightROI.release();
 	}

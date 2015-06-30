@@ -12,8 +12,6 @@
 #include "Threads\ContinuousController.h"
 #include "PDThreadJob.h"
 
-class PDThreadPool;
-
 
 // thread controller of this project
 class PDThreadController : public stl_tp::ContinuousController<PDThreadJob> {
@@ -41,9 +39,6 @@ public:
 	//virtual void PostCallback(std::function<void(void)>&) = 0;
 	
 protected:
-	// Set the Pool ptr explicitly. DO not try to release it.
-	PDThreadPool* poolptr;
-
 	// Condition variable for thread to wait and call
 	std::condition_variable m_conVariable;
 	// Mutex, only used paired with m_conVariable

@@ -28,7 +28,7 @@ void PDThreadPool::Initialize()
 	// Initialize the ThreadController
 	m_controllerVec.reserve(NUM_THREADS);
 	for (unsigned int i = 0; i < NUM_THREADS; ++i) {
-		auto pController = std::make_unique<PDThreadController>(this);
+		auto pController = std::make_unique<PDThreadController>();
 		pController->Initialize();
 		this->m_controllerVec.push_back(std::move(pController));
 	}
@@ -211,5 +211,5 @@ void PDThreadPool::analyze()
 	t = static_cast<long>(cvGetTickCount()) - t;
 	double t0 = static_cast<double>(t / static_cast<long>((cvGetTickFrequency()*1000.)));
 	std::cout << "[STATE] Process completed. Total analysis time: " << t0 << " ms." << std::endl;
-	cvWaitKey();
+	//cvWaitKey();
 }

@@ -7,23 +7,16 @@
 //
 
 #include "PDThreadController.h"
-#include "PDThreadPool.h"
 
 
 PDThreadController::PDThreadController()
 {}
 
-PDThreadController::PDThreadController(PDThreadPool* poolPtr_)
-{
-	this->poolptr = poolPtr_;
-}
-
 
 void PDThreadController::Initialize()
 {
 	// Initialize the job
-	m_job = std::make_unique<PDThreadJob>("haarcascade_eye_tree_eyeglasses.xml",
-		poolptr);
+	m_job = std::make_unique<PDThreadJob>("haarcascade_eye_tree_eyeglasses.xml");
 
 	// Regitster the Loop() function
 	bool isJoinable = m_thread.joinable();

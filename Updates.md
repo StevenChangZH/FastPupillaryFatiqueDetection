@@ -74,3 +74,6 @@ Update record file
 * Add interpolation functions and make more adjustments.
 * Final version of the course but not quite complete. The calculation of PUI need to adjust.
 * Use the video but not camera to display.
+
+**Version 1.7.1**
+* Fix a bug using PDThreadPool naked ptr.

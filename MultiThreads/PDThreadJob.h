@@ -10,6 +10,7 @@
 
 #pragma once
 #include "Threads\AbstractThreadJob.h"
+#include "SingletonGrabber.h"
 #include "Log.h"
 
 class PDThreadPool;
@@ -17,7 +18,7 @@ class PDThreadPool;
 class PDThreadJob : public stl_tp::AbstractThreadJob {
 public:
 	PDThreadJob();
-	PDThreadJob(const std::string& cascadename, PDThreadPool* pool_);
+	PDThreadJob(const std::string& cascadename);
 	virtual ~PDThreadJob();
 
 	// Called before Task() method to exchange data
@@ -45,8 +46,6 @@ protected:
 
 	////////////////////// Protected Variables ////////////////////
 
-	// Set the Pool ptr explicitly. DO not try to release it.
-	PDThreadPool* poolptr;
 	// Time duration
 	std::chrono::system_clock::time_point timepoint;
 };
